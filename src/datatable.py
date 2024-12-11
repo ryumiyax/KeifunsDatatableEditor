@@ -24,7 +24,7 @@ class Song:
     uniqueId: int = 0
     songNameList: List[tuple[str, int]] = field(default_factory=lambda: [('', 0), ('', 1), ('', 2), ('', 3)]) #TODO: Change to tuple(tuple) if possible
     songSubList: List[tuple[str, int]] = field(default_factory=lambda: [('', 0), ('', 1), ('', 2), ('', 3)])
-    songDetailList: List[tuple[str, int]] = field(default_factory=lambda: [('', 0), ('', 1), ('', 2), ('', 3)])
+    songDetailList: List[tuple[str, int]] = field(default_factory=lambda: [('', 0), ('', 0), ('', 0), ('', 0)])
     genreNo: int = 0
     songFileName: str = ""
     new: bool = False
