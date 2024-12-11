@@ -11,22 +11,10 @@ from PIL import Image, ImageTk
 from typing import List
 from src import config, parse_tja, fumen, common
 from src import updater as ud
+from src import constants
 import traceback
 import shutil
 import webbrowser
-
-
-
-GENRE_MAPPING = {
-    "0. POP": 0,
-    "1. Anime": 1,
-    "2. Kids": 2,
-    "3. VOCALOID™ Music": 3,
-    "4. Game Music": 4,
-    "5. NAMCO Original": 5,
-    "6. Variety": 6,
-    "7. Classic": 7,
-}
 
 class Program:
     window: tk.Tk
@@ -176,6 +164,7 @@ class Program:
 
         self.util_menu = tk.Menu(self.menu_bar, tearoff=0)
         self.util_menu.add_command(label="Add Ura to Chart", accelerator="Ctrl+U", command=self.on_add_ura)
+        self.util_menu.add_command(label="Search", accelerator="Ctrl+F", command=self.search)
         self.menu_bar.add_cascade(label="Utilities", menu=self.util_menu)
 
         #Help Menu
@@ -194,6 +183,7 @@ class Program:
         self.window.bind("<Control-s>", self.save_datatable) #type: ignore
         self.window.bind("<Control-,>", self.create_config_window) #type: ignore
         self.window.bind("<Control-u>", self.on_add_ura)  # type: ignore
+        self.window.bind("<Control-f>", self.search)
 
 
         self.songid_label = tk.Label(self.window, text="Song Id:")
@@ -298,7 +288,7 @@ class Program:
         self.genre_label = tk.Label(self.song_details_subframes[1], text="Main Genre:", anchor="w", width=20)
         self.genre_label.grid(row=2, column=0, sticky="w")
 
-        self.genre_combobox = ttk.Combobox(self.song_details_subframes[1], values=list(GENRE_MAPPING.keys()), textvariable=self.genre_var)
+        self.genre_combobox = ttk.Combobox(self.song_details_subframes[1], values=list(constants.GENRE_MAPPING.keys()), textvariable=self.genre_var)
         self.genre_combobox.grid(row=3, column=0, sticky="ew")
 
         # Song Filename
@@ -499,7 +489,7 @@ class Program:
         tk.Label(main_frame, text="Order", anchor="w", width=6).grid(row=0, column=2, padx=5, pady=5)
         tk.Label(main_frame, text="Disp Type", anchor="w", width=10).grid(row=0, column=3, padx=5, pady=5)
 
-        for i, genre in enumerate(GENRE_MAPPING.keys()):
+        for i, genre in enumerate(constants.GENRE_MAPPING.keys()):
             # Row for genre name and checkbox
             self.music_order_genre_display_var.append(tk.BooleanVar())
             self.music_order_genre_display_var[i].set(self.song_info.musicOrder[i][0] != -1)
@@ -530,7 +520,7 @@ class Program:
 
         # Add the submit button at the bottom and center it
         self.music_order_button_frame = tk.Frame(self.music_order_window, pady=5)
-        self.music_order_button_frame.grid(row=len(GENRE_MAPPING)+2, column=0, pady=5)
+        self.music_order_button_frame.grid(row=len(constants.GENRE_MAPPING)+2, column=0, pady=5)
 
         self.music_order_submit_button = tk.Button(self.music_order_button_frame, text="Update", command=self.on_music_order_submit)
         self.music_order_submit_button.grid(row=0, column=0)
@@ -574,6 +564,99 @@ class Program:
             except Exception as e:
                 messagebox.showerror('Delete Song', f'Delete Song Error: {e}')
                 return
+
+    def search(self, *args):
+        if not hasattr(self, 'datatable'):
+            messagebox.showerror('Search View Error', f'Search View: Open datatable first')
+            return
+
+        search_window = tk.Toplevel(self.window)
+        search_window.title('Search')
+        search_window.resizable(False, False)
+        langvar = tk.IntVar()
+        song_list = self.datatable.get_song_list(main_genre_only=True)
+
+        search_var = tk.StringVar()
+
+        data: List
+
+        def perform_search(*args):
+            nonlocal data, tree, song_list
+            query = search_var.get().lower()
+            data = [(genre, (x.title[langvar.get()], x.sub[langvar.get()], x.id, x.uniqueId))
+                    for genre, e in enumerate(song_list)
+                    for x in e
+                    if query in x.title[langvar.get()].lower() or query in x.sub[langvar.get()].lower() or query in x.id.lower() or query in str(x.uniqueId)]  # god forgive me
+            tree.delete(*tree.get_children())
+            for e in data:
+                tree.insert("", tk.END, values=e[1], tags=(str(e[0])))
+
+        search_frame = tk.Frame(search_window)
+
+        search_label = tk.Label(search_frame, text='Search:')
+        search_label.grid(row=0, column=0, sticky="w")
+
+        search_var.trace_add("write", perform_search)  # Bind the search function to changes in the entry
+        search_bar = ttk.Entry(search_frame, textvariable=search_var, width=30)
+        search_bar.grid(row=0, column=1, padx=10, pady=10)
+
+        search_frame.grid(row=0, column=0)
+
+
+        language_frame = tk.Frame(search_window, pady=5)
+        language_radiobuttons = list()
+        langvar.trace_add("write", perform_search)
+
+        for i, lang in enumerate(['JPN', 'ENG', 'zh-TW', 'KOR']):
+            language_radiobuttons.append(
+                tk.Radiobutton(language_frame, text=lang, variable=langvar, value=i))
+            language_radiobuttons[i].grid(row=0, column=i)
+
+        language_frame.grid(row=1, column=0)
+
+        # Create and place the results table
+        tree_frame = ttk.Frame(search_window)
+        tree_frame.grid(row=2, column=0, padx=10, pady=10, sticky='nsew')
+
+        # Create and place the results table
+        tree = ttk.Treeview(tree_frame, columns=("Title", "Sub", "SongId", "UniqueId"), show="headings")
+
+        def on_double_click(event):
+            nonlocal search_window
+            item = tree.selection()[0]
+            new_songid = list(tree.item(item).values())[2][2]
+            old_songid = self.current_songid
+            self.load_song(old_songid, new_songid)
+            self.songid_entry.delete(0, tk.END)
+            self.songid_entry.insert(0, new_songid)
+            search_window.destroy()
+
+        tree.bind("<Double-1>", on_double_click)
+
+        # Create vertical scrollbar
+        vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=tree.yview)
+        vsb.pack(side='right', fill='y')
+
+        # Configure the Treeview to use scrollbars
+        tree.configure(yscrollcommand=vsb.set)
+        tree.pack(side='left', fill='both', expand=True)
+
+        # Define headings for the table
+        tree.heading("Title", text="Title")
+        tree.heading("Sub", text="Sub")
+        tree.heading("SongId", text="SongId")
+        tree.heading("UniqueId", text="UniqueId")
+
+        for genre, color in constants.GENRE_COLOURS.items():
+            tree.tag_configure(str(genre), background=color)
+
+        search_window.grid_rowconfigure(1, weight=1)
+        search_window.grid_columnconfigure(0, weight=1)
+
+        perform_search()
+
+
+
 
 
     def on_new_song(self, *args):
@@ -978,7 +1061,7 @@ class Program:
         new_uid_window.attributes('-toolwindow', True)
 
         new_uid_window.grab_set()
-        new_uid_window.title('Update uniqueId {uniqueId}')
+        new_uid_window.title(f'Update uniqueId {uniqueId}')
         prompt = tk.Label(new_uid_window, text = 'Enter a new UniqueId for the song to overwrite the existing one')
         prompt.grid(row=0, column=0)
         new_uid_var = tk.IntVar()
@@ -1092,12 +1175,12 @@ class Program:
         self.song_info.songDetailList[self.language_value.get()] = self.song_detail_var.get(), self.song_detail_font_var.get()
 
         genre = self.genre_var.get()
-        if genre in GENRE_MAPPING: 
-            self.song_info.genreNo = GENRE_MAPPING[genre]
+        if genre in constants.GENRE_MAPPING:
+            self.song_info.genreNo = constants.GENRE_MAPPING[genre]
         else:
             raise Exception("Invalid Genre")
         
-        if self.song_info.musicOrder[GENRE_MAPPING[genre]] == -1 and not all(x == -1 for x in self.song_info.musicOrder):
+        if self.song_info.musicOrder[constants.GENRE_MAPPING[genre]] == -1 and not all(x == -1 for x in self.song_info.musicOrder):
             raise Exception("Music Order cannot be -1 for main genre")
 
 
@@ -1137,7 +1220,12 @@ class Program:
             messagebox.showerror('Song Load Error', f'Song Load Error: Open datatable first')
             return
         old_songid = self.current_songid
-        self.current_songid = event.widget.get()
+        new_songid = event.widget.get()
+        self.load_song(old_songid, new_songid)
+
+
+    def load_song(self, old_songid, songid):
+        self.current_songid = songid
         if old_songid != '':
             try:
                 self.save_song()
@@ -1216,7 +1304,7 @@ class Program:
         self.decouple_duet_var.set(any(self.song_info.shinuti[i] != self.song_info.shinuti_duet[i] for i in range(5)) or any(self.song_info.shinuti_score[i] != self.song_info.shinuti_score_duet[i] for i in range(5)))
         self.poplate_wordlist_vars()
         self.unique_id_var.set(self.song_info.uniqueId)
-        self.genre_var.set(next((k for k, v in GENRE_MAPPING.items() if v == self.song_info.genreNo), '')) #Do not question this line of code (getting key given value)
+        self.genre_var.set(next((k for k, v in constants.GENRE_MAPPING.items() if v == self.song_info.genreNo), '')) #Do not question this line of code (getting key given value)
         self.song_filename_var.set(self.song_info.songFileName)
         self.new_var.set(self.song_info.new)
         self.papamama_var.set(self.song_info.papamama)

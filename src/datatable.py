@@ -3,9 +3,9 @@ from typing import List, Dict
 import json
 import os
 from src import encryption, config
-
+from src import constants
 from dataclasses import dataclass, field, asdict
-from typing import List
+from typing import List, Tuple
 
 """
 When adding a new attribute:
@@ -22,7 +22,7 @@ When adding a new attribute:
 class Song:
     id: str = ""
     uniqueId: int = 0
-    songNameList: List[tuple[str, int]] = field(default_factory=lambda: [('', 0), ('', 1), ('', 2), ('', 3)])
+    songNameList: List[tuple[str, int]] = field(default_factory=lambda: [('', 0), ('', 1), ('', 2), ('', 3)]) #TODO: Change to tuple(tuple) if possible
     songSubList: List[tuple[str, int]] = field(default_factory=lambda: [('', 0), ('', 1), ('', 2), ('', 3)])
     songDetailList: List[tuple[str, int]] = field(default_factory=lambda: [('', 0), ('', 1), ('', 2), ('', 3)])
     genreNo: int = 0
@@ -45,7 +45,6 @@ class Song:
     aiOniLevel11: str = ""
     aiUraLevel11: str = ""
     musicOrder: List[tuple[int,int]] = field(default_factory=lambda: [(0,0), (-1,0), (-1,0), (-1,0), (-1,0), (-1,0), (-1,0), (-1,0)])
-
 
 @dataclass
 class DatatableIndices:
@@ -189,11 +188,20 @@ class WordlistItem:
     koreanText: str = ""
     koreanFontType: int = 3
 
+@dataclass
+class SongListItem:
+    id: str = ""
+    uniqueId: int = 0
+    title: Tuple[str, str, str, str] = "", "", "", ""
+    sub: Tuple[str, str, str, str] = "", "", "", ""
+
 class Datatable:
     """Datatable class"""
     filepath: str
     indices: Dict[str, DatatableIndices]
     uid_musicinfo_index_mapping: Dict[int, int]
+    musicinfo_indices: Dict[str, int]
+    wordlist_indices: Dict[str, Tuple[int, int, int]]
     wordlist: List[WordlistItem]
     musicinfo: List[MusicinfoItem]
     music_attribute: List[MusicAttributeItem]
@@ -222,7 +230,7 @@ class Datatable:
             raise Exception(f"Couldn't find: {files_to_find}")
         self.indices = dict()
         self.uid_musicinfo_index_mapping = dict()
-
+        self.wordlist_indices = dict()
         self.parse_musicinfo()
         self.parse_wordlist()
         self.parse_music_attribute()
@@ -242,36 +250,42 @@ class Datatable:
         else:
             raise ValueError(f"Unknown field name: {field_name}")
 
+    def get_wordlist_indices(self, id: str) -> Tuple[int, int, int]:
+        if id in self.wordlist_indices:
+            return self.wordlist_indices[id]
+        wordlist_name_index = -1
+        wordlist_sub_index = -1
+        wordlist_detail_index = -1
+        for i, e in enumerate(self.wordlist):
+            if e.key == f"song_{id}":  # You can't use f strings in switch statement?
+                if wordlist_name_index == -1: wordlist_name_index = i
+            elif e.key == f"song_sub_{id}":
+                if wordlist_sub_index == -1: wordlist_sub_index = i
+            elif e.key == f"song_detail_{id}":
+                if wordlist_detail_index == -1: wordlist_detail_index = i
+            else:
+                continue  # No point in checking if condition below if current element isn't a match
+            if wordlist_detail_index != -1 and wordlist_sub_index != -1 and wordlist_name_index != -1:
+                break
+        self.wordlist_indices[id] = wordlist_name_index, wordlist_sub_index, wordlist_detail_index
+        return wordlist_name_index, wordlist_sub_index, wordlist_detail_index
+
+    def get_musicinfo_index(self, id: str):
+        if id not in self.musicinfo_indices:
+            raise KeyError(f"song {id} not found")
+        return self.musicinfo_indices[id]
+
     def get_indices(self, id: str) -> DatatableIndices:
         indices: DatatableIndices
         if id in self.indices:
             indices = self.indices[id]
         else:
             """Loop over datatable objects to find indices"""
-            musicinfo_index = -1
-            for i,e in enumerate(self.musicinfo):
-                if e.id == id:
-                    musicinfo_index = i
-                    break
-            
-            if musicinfo_index == -1:
-                raise KeyError(f"song {id} not found")
-            
-            wordlist_name_index = -1
-            wordlist_sub_index = -1
-            wordlist_detail_index = -1
-            for i,e in enumerate(self.wordlist):
-                if e.key == f"song_{id}": #You can't use f strings in switch statement?
-                    if wordlist_name_index == -1: wordlist_name_index = i
-                elif e.key == f"song_sub_{id}":
-                    if wordlist_sub_index == -1: wordlist_sub_index = i
-                elif e.key == f"song_detail_{id}":
-                    if wordlist_detail_index == -1: wordlist_detail_index = i
-                else:
-                    continue #No point in checking if condition below if current element isn't a match
-                if wordlist_detail_index != -1 and wordlist_sub_index != -1 and wordlist_name_index != -1:
-                    break
-            
+            musicinfo_index = self.get_musicinfo_index(id)
+
+
+            wordlist_name_index, wordlist_sub_index, wordlist_detail_index = self.get_wordlist_indices(id)
+
             music_attribute_index = -1
             for i,e in enumerate(self.music_attribute):
                 if e.id == id:
@@ -319,10 +333,40 @@ class Datatable:
             self.indices[id] = indices
         return indices
 
+    def get_song_list(self, main_genre_only: bool) -> List[List[SongListItem]]:
+        ret = [[] for _ in range(8)]
+        for genre, genre_order in enumerate(self.music_order):
+            for e in genre_order:
+                if main_genre_only:
+                    try:
+                        musicinfo = self.musicinfo[self.get_musicinfo_index(e.id)]
+                        if musicinfo.genreNo != genre:
+                            continue
+                    except KeyError:
+                        continue
+                title_index, sub_index, _ = self.get_wordlist_indices(e.id)
+                title_item = self.wordlist[title_index] if title_index != -1 else WordlistItem()
+                sub_item = self.wordlist[sub_index] if sub_index != -1 else WordlistItem()
+
+                ret[genre].append(SongListItem(
+                    id=e.id,
+                    uniqueId=e.uniqueId,
+                    title=(title_item.japaneseText,
+                           title_item.englishUsText,
+                           title_item.chineseTText,
+                           title_item.koreanText),
+                    sub=(sub_item.japaneseText,
+                         sub_item.englishUsText,
+                         sub_item.chineseTText,
+                         sub_item.koreanText
+                         )
+                ))
+        return ret
+
+
+
     def get_song_info(self, id: str) -> Song:
-        
         indices = self.get_indices(id)
-        print(indices)
         wordlist_name_item = self.wordlist[indices.wordlist_name]
         wordlist_sub_item = self.wordlist[indices.wordlist_sub]
         wordlist_detail_item = self.wordlist[indices.wordlist_detail]
@@ -579,13 +623,13 @@ class Datatable:
                     genre_list.insert(new_position, song_item)
 
     def delete_song(self, id: str):
-        indices = self.get_indices(id)
+        deleted_indices = self.get_indices(id)
 
         # Create a list of (index, attribute) tuples for wordlist items
         wordlist_indices = [
-            (indices.wordlist_name, 'wordlist_name'),
-            (indices.wordlist_sub, 'wordlist_sub'),
-            (indices.wordlist_detail, 'wordlist_detail')
+            (deleted_indices.wordlist_name, 'wordlist_name'),
+            (deleted_indices.wordlist_sub, 'wordlist_sub'),
+            (deleted_indices.wordlist_detail, 'wordlist_detail')
         ]
         wordlist_indices_copy = wordlist_indices[:]
         # Sort by index in descending order
@@ -598,14 +642,17 @@ class Datatable:
             for i, (idx, a) in enumerate(wordlist_indices):
                 if idx > index:
                     wordlist_indices[i] = (idx - 1, a)
+
             # Update the original indices
-            setattr(indices, attr, index)
+            setattr(deleted_indices, attr, index)
 
         # Delete other items
-        del self.musicinfo[indices.musicinfo]
-        del self.music_attribute[indices.music_attribute]
-        del self.music_ai_section[indices.music_ai_section]
-        del self.music_usbsetting[indices.music_usbsetting]
+        del self.wordlist_indices[id]
+        del self.musicinfo[deleted_indices.musicinfo]
+        del self.musicinfo_indices[id]
+        del self.music_attribute[deleted_indices.music_attribute]
+        del self.music_ai_section[deleted_indices.music_ai_section]
+        del self.music_usbsetting[deleted_indices.music_usbsetting]
 
         # Update indices for all songs
         for song_id, song_indices in self.indices.items():
@@ -615,17 +662,24 @@ class Datatable:
                     for current_song_index, attr in zip([song_indices.wordlist_name, song_indices.wordlist_sub, song_indices.wordlist_detail], ["wordlist_name", "wordlist_sub", "wordlist_detail"]):
                         if current_song_index > deleted_index:
                             setattr(song_indices, attr, current_song_index - 1)
+                    for k, v in self.wordlist_indices:
+                        if any(x > deleted_index for x in v):
+                            self.wordlist_indices[k] = tuple([x - 1 if x > deleted_index else x for x in v])
 
 
                 # Update other indices
-                if song_indices.musicinfo > indices.musicinfo:
+                if song_indices.musicinfo > deleted_indices.musicinfo:
                     song_indices.musicinfo -= 1
-                if song_indices.music_attribute > indices.music_attribute:
+                if song_indices.music_attribute > deleted_indices.music_attribute:
                     song_indices.music_attribute -= 1
-                if song_indices.music_ai_section > indices.music_ai_section:
+                if song_indices.music_ai_section > deleted_indices.music_ai_section:
                     song_indices.music_ai_section -= 1
-                if song_indices.music_usbsetting > indices.music_usbsetting:
+                if song_indices.music_usbsetting > deleted_indices.music_usbsetting:
                     song_indices.music_usbsetting -= 1
+
+        for k, v in self.musicinfo_indices:
+            if v > deleted_indices.musicinfo:
+                self.musicinfo_indices[k] -= 1
 
         # Remove the deleted song's indices from the dictionary
         del self.indices[id]
@@ -633,9 +687,9 @@ class Datatable:
         # Update uid_musicinfo_index_mapping
         updated_mapping = {}
         for uid, index in self.uid_musicinfo_index_mapping.items():
-            if index == indices.musicinfo:
+            if index == deleted_indices.musicinfo:
                 continue  # Skip the deleted song
-            elif index > indices.musicinfo:
+            elif index > deleted_indices.musicinfo:
                 updated_mapping[uid] = index - 1
             else:
                 updated_mapping[uid] = index
@@ -691,7 +745,9 @@ class Datatable:
         defaults = MusicinfoItem().__dict__  # Use default values from the dataclass
 
         self.musicinfo = []
+        self.musicinfo_indices = dict()
         # Convert the list of dictionaries to a list of musicinfoItem objects
+        i = 0
         for item in data_dict['items']:
             try:
                 # Use dictionary unpacking with defaults
@@ -700,6 +756,8 @@ class Datatable:
                 # Create the musicinfoItem using the merged dictionary
                 musicinfo_item = MusicinfoItem(**full_item)
                 self.musicinfo.append(musicinfo_item)
+                self.musicinfo_indices[musicinfo_item.id] = i
+                i += 1
             except TypeError as e:
                 print(f"Failed to create musicinfoItem from {item['id']}: {e}")
 
