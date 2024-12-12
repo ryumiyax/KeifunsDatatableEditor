@@ -190,8 +190,11 @@ class WordlistItem:
 
 @dataclass
 class SongListItem:
+    musicOrderIndex: int = 0
     id: str = ""
     uniqueId: int = 0
+    isSubgenre: bool = False
+    closeDispType: int = 0
     title: Tuple[str, str, str, str] = "", "", "", ""
     sub: Tuple[str, str, str, str] = "", "", "", ""
 
@@ -336,21 +339,23 @@ class Datatable:
     def get_song_list(self, main_genre_only: bool) -> List[List[SongListItem]]:
         ret = [[] for _ in range(8)]
         for genre, genre_order in enumerate(self.music_order):
-            for e in genre_order:
-                if main_genre_only:
-                    try:
-                        musicinfo = self.musicinfo[self.get_musicinfo_index(e.id)]
-                        if musicinfo.genreNo != genre:
-                            continue
-                    except KeyError:
+            for i, e in enumerate(genre_order):
+                try:
+                    musicinfo = self.musicinfo[self.get_musicinfo_index(e.id)]
+                    subgenre = musicinfo.genreNo != genre
+                    if musicinfo.genreNo != genre and main_genre_only:
                         continue
+                except KeyError:
+                    continue
                 title_index, sub_index, _ = self.get_wordlist_indices(e.id)
                 title_item = self.wordlist[title_index] if title_index != -1 else WordlistItem()
                 sub_item = self.wordlist[sub_index] if sub_index != -1 else WordlistItem()
 
                 ret[genre].append(SongListItem(
+                    musicOrderIndex=i,
                     id=e.id,
                     uniqueId=e.uniqueId,
+                    isSubgenre=subgenre,
                     title=(title_item.japaneseText,
                            title_item.englishUsText,
                            title_item.chineseTText,
@@ -738,6 +743,17 @@ class Datatable:
         self.uid_musicinfo_index_mapping[new_uniqueId] = self.uid_musicinfo_index_mapping[old_uniqueId]
         del self.uid_musicinfo_index_mapping[old_uniqueId]
 
+    def set_music_order(self, song_list: List[List[SongListItem]]):
+        for genre, songs in enumerate(song_list):
+            self.music_order[genre].clear()
+            for song in songs:
+                self.music_order[genre].append(MusicOrderItem(
+                    genreNo=genre,
+                    id=song.id,
+                    uniqueId=song.uniqueId,
+                    closeDispType=song.closeDispType
+                ))
+
     def parse_musicinfo(self) -> None:
         with open(os.path.join(self.filepath, 'musicinfo.json'), 'r', encoding='utf-8') as f:
             data_dict = json.load(f)  # Load JSON data as a Python dictionary
@@ -941,5 +957,4 @@ class Datatable:
                         encrypt=True,
                     )
                     os.remove(full_path)
-
         

@@ -164,7 +164,8 @@ class Program:
 
         self.util_menu = tk.Menu(self.menu_bar, tearoff=0)
         self.util_menu.add_command(label="Add Ura to Chart", accelerator="Ctrl+U", command=self.on_add_ura)
-        self.util_menu.add_command(label="Search", accelerator="Ctrl+F", command=self.search)
+        self.util_menu.add_command(label="Search", accelerator="Ctrl+F", command=self.search_view)
+        self.util_menu.add_command(label="Music Order", accelerator="Ctrl+M", command=self.music_order_view)
         self.menu_bar.add_cascade(label="Utilities", menu=self.util_menu)
 
         #Help Menu
@@ -183,8 +184,8 @@ class Program:
         self.window.bind("<Control-s>", self.save_datatable) #type: ignore
         self.window.bind("<Control-,>", self.create_config_window) #type: ignore
         self.window.bind("<Control-u>", self.on_add_ura)  # type: ignore
-        self.window.bind("<Control-f>", self.search)
-
+        self.window.bind("<Control-f>", self.search_view)
+        self.window.bind("<Control-m>", self.music_order_view)
 
         self.songid_label = tk.Label(self.window, text="Song Id:")
         self.songid_label.grid(row=0, column=0)
@@ -565,7 +566,7 @@ class Program:
                 messagebox.showerror('Delete Song', f'Delete Song Error: {e}')
                 return
 
-    def search(self, *args):
+    def search_view(self, *args):
         if not hasattr(self, 'datatable'):
             messagebox.showerror('Search View Error', f'Search View: Open datatable first')
             return
@@ -619,10 +620,10 @@ class Program:
         tree_frame.grid(row=2, column=0, padx=10, pady=10, sticky='nsew')
 
         # Create and place the results table
-        tree = ttk.Treeview(tree_frame, columns=("Title", "Sub", "SongId", "UniqueId"), show="headings")
+        tree = ttk.Treeview(tree_frame, columns=("Title", "Sub", "SongId", "UniqueId"), show="headings", height=35)
 
         def on_double_click(event):
-            nonlocal search_window
+            nonlocal search_window, tree
             item = tree.selection()[0]
             new_songid = list(tree.item(item).values())[2][2]
             old_songid = self.current_songid
@@ -655,6 +656,401 @@ class Program:
 
         perform_search()
 
+        info_label = ttk.Label(search_window, text="Hint: double click on a song to open it", font=("TkDefaultFont", 8))
+        info_label.grid(row=3, column=0, sticky='e', padx=10, pady=(0, 5))
+
+    def music_order_view(self, *args):
+        if not hasattr(self, 'datatable'):
+            messagebox.showerror('Music Order View Error', f'Music Order View: Open datatable first')
+            return
+
+        musicorder_window = tk.Toplevel(self.window)
+        musicorder_window.title('Music Order')
+        musicorder_window.resizable(False, False)
+        langvar = tk.IntVar()
+        song_list = self.datatable.get_song_list(main_genre_only=False)
+
+        # search_var = tk.StringVar()
+
+        data: List
+
+        def refresh_list(*args):
+            nonlocal data, tree, song_list
+
+            # If tree is empty, create the initial structure
+            if not tree.get_children():
+                # Create parent nodes for each genre first
+                for genre_id, genre_name in constants.GENRE_NAME_MAP.items():
+                    genre_iid = f"genre_{genre_id}"
+                    tree.insert("", tk.END, iid=genre_iid, text=genre_name, values=("", "", "", ""),
+                                tags=(str(genre_id)))
+
+                # Insert songs under their respective genre parents
+                for genre, songs in enumerate(song_list):
+                    genre_iid = f"genre_{genre}"
+                    for song in songs:
+                        values = (song.musicOrderIndex,
+                                  "♦ " + song.title[langvar.get()] if not song.isSubgenre else song.title[langvar.get()],  # add star for main
+                                  song.id,
+                                  song.uniqueId)
+                        tree.insert(genre_iid, tk.END, values=values, tags=(str(genre)))
+            else:
+                # Just update the title text for each song
+                for genre, songs in enumerate(song_list):
+                    genre_iid = f"genre_{genre}"
+                    song_items = tree.get_children(genre_iid)
+                    for item, song in zip(song_items, songs):
+                        current_values = tree.item(item)['values']
+                        new_values = (
+                            current_values[0],  # musicOrderIndex
+                            "♦ " + song.title[langvar.get()] if not song.isSubgenre else song.title[langvar.get()],  # add star for main
+                            current_values[2],  # id
+                            current_values[3]  # uniqueId
+                        )
+                        tree.item(item, values=new_values)
+
+        # search_frame = tk.Frame(musicorder_window)
+        #
+        # search_label = tk.Label(search_frame, text='Search:')
+        # search_label.grid(row=0, column=0, sticky="w")
+        #
+        # search_var.trace_add("write", perform_search)  # Bind the search function to changes in the entry
+        # search_bar = ttk.Entry(search_frame, textvariable=search_var, width=30)
+        # search_bar.grid(row=0, column=1, padx=10, pady=10)
+        #
+        # search_frame.grid(row=0, column=0)
+
+
+        language_frame = tk.Frame(musicorder_window, pady=5)
+        language_radiobuttons = list()
+        langvar.trace_add("write", refresh_list)
+
+        for i, lang in enumerate(['JPN', 'ENG', 'zh-TW', 'KOR']):
+            language_radiobuttons.append(
+                tk.Radiobutton(language_frame, text=lang, variable=langvar, value=i))
+            language_radiobuttons[i].grid(row=0, column=i)
+
+        language_frame.grid(row=0, column=0)
+
+        # Controls Functions
+
+        def move_song_up():
+            selected_item = tree.selection()[0]  # Get selected item
+            if not tree.parent(selected_item):
+                return
+            parent = tree.parent(selected_item)  # Get genre parent
+
+            # Get index of selected item within its genre
+            genre_songs = tree.get_children(parent)
+            current_index = genre_songs.index(selected_item)
+
+            # Can't move if it's already at the top
+            if current_index == 0:
+                return
+
+            # Get current values and previous item
+            prev_item = genre_songs[current_index - 1]
+
+            # Move the item in the tree
+            tree.move(selected_item, parent, current_index - 1)
+
+            # Swap the music order values
+            current_values = tree.item(selected_item)['values']
+            prev_values = tree.item(prev_item)['values']
+
+            # Update the values
+            tree.item(selected_item, values=(prev_values[0], current_values[1], current_values[2], current_values[3]))
+            tree.item(prev_item, values=(current_values[0], prev_values[1], prev_values[2], prev_values[3]))
+
+            # Update the underlying data structure
+            genre_id = int(parent.split('_')[1])  # Get genre from parent ID
+
+            # Swap the actual songs in song_list
+            song_list[genre_id][current_index], song_list[genre_id][current_index - 1] = \
+                song_list[genre_id][current_index - 1], song_list[genre_id][current_index]
+
+            # Update their order indices
+            song_list[genre_id][current_index].musicOrderIndex = current_values[0]
+            song_list[genre_id][current_index - 1].musicOrderIndex = prev_values[0]
+
+        def move_song_down():
+            selected_item = tree.selection()[0]  # Get selected item
+            if not tree.parent(selected_item):
+                return
+            parent = tree.parent(selected_item)  # Get genre parent
+
+            # Get index of selected item within its genre
+            genre_songs = tree.get_children(parent)
+            current_index = genre_songs.index(selected_item)
+
+            # Can't move if it's already at the bottom
+            if current_index >= len(genre_songs) - 1:
+                return
+
+            # Get current values and next item
+            next_item = genre_songs[current_index + 1]
+
+            # Move the item in the tree
+            tree.move(selected_item, parent, current_index + 1)
+
+            # Swap the music order values
+            current_values = tree.item(selected_item)['values']
+            next_values = tree.item(next_item)['values']
+
+            # Update the values
+            tree.item(selected_item, values=(next_values[0], current_values[1], current_values[2], current_values[3]))
+            tree.item(next_item, values=(current_values[0], next_values[1], next_values[2], next_values[3]))
+
+            # Update the underlying data structure
+            genre_id = int(parent.split('_')[1])  # Get genre from parent ID
+
+            # Swap the actual songs in song_list
+            song_list[genre_id][current_index], song_list[genre_id][current_index + 1] = \
+                song_list[genre_id][current_index + 1], song_list[genre_id][current_index]
+
+            # Update their order indices
+            song_list[genre_id][current_index].musicOrderIndex = next_values[0]
+            song_list[genre_id][current_index + 1].musicOrderIndex = current_values[0]
+
+        # Initialize the loop variables
+        move_up_loop = None
+        move_down_loop = None
+
+        def start_move_down(event=None):
+            if not tree.selection():  # Check if anything is selected
+                return
+            nonlocal move_down_loop
+            move_song_down()
+            # First repeat after 500ms, then continue with 100ms intervals
+            move_down_loop = musicorder_window.after(500, continue_move_down)
+
+        def continue_move_down():
+            nonlocal move_down_loop
+            move_song_down()
+            move_down_loop = musicorder_window.after(100, continue_move_down)
+
+        def stop_move_down(event=None):
+            nonlocal move_down_loop
+            if move_down_loop is not None:
+                musicorder_window.after_cancel(move_down_loop)
+                move_down_loop = None
+
+        def start_move_up(event=None):
+            if not tree.selection():  # Check if anything is selected
+                return
+            nonlocal move_up_loop
+            move_song_up()
+            # First repeat after 500ms, then continue with 100ms intervals
+            move_up_loop = musicorder_window.after(500, continue_move_up)
+
+        def continue_move_up():
+            nonlocal move_up_loop
+            move_song_up()
+            move_up_loop = musicorder_window.after(100, continue_move_up)
+
+        def stop_move_up(event=None):
+            nonlocal move_up_loop
+            if move_up_loop is not None:
+                musicorder_window.after_cancel(move_up_loop)
+                move_up_loop = None
+
+        def add_song():
+            # Check if a song is selected
+            selected = tree.selection()
+            if not selected:
+                messagebox.showerror("Add Song", "Please select a song to add above")
+                return
+            if not tree.parent(selected[0]):
+                return
+
+            # Create popup window
+            popup = tk.Toplevel(musicorder_window, pady=10, padx=10)
+            popup.title("New Song")
+            popup.attributes('-toolwindow', True)
+            popup.grab_set()
+
+            # Create and layout widgets
+            song_id_label = tk.Label(popup, text="Song Id:", anchor="w", width=20)
+            song_id_label.grid(row=0, column=0)
+
+            song_id_entry = tk.Entry(popup)
+            song_id_entry.grid(row=1, column=0, padx=5)
+            song_id_entry.focus()
+
+            def submit(*args):
+                song_id = song_id_entry.get()
+                if not song_id:
+                    messagebox.showerror("Add Song", "Please enter a Song ID")
+                    return
+
+                selected_item = tree.selection()[0]
+                parent = tree.parent(selected_item)
+                genre_id = int(parent.split('_')[1])
+
+                # Get all songs in this genre
+                genre_songs = tree.get_children(parent)
+                selected_index = genre_songs.index(selected_item)
+
+                # Get selected song's current order
+                current_values = tree.item(selected_item)['values']
+                selected_order = current_values[0]
+
+                # Get song info and create new song
+                try:
+                    song_info = self.datatable.get_song_info(song_id)
+                except KeyError as e:
+                    messagebox.showerror("Add Song", str(e))
+                    return
+
+
+                # Create a new song object and add it to song_list
+                new_song = dt.SongListItem() # Create new instance of same class
+                new_song.musicOrderIndex = selected_order
+                new_song.id = song_id
+                new_song.title = [x for (x, _) in song_info.songNameList]  # Use the actual song names
+                new_song.isSubgenre = song_info.genreNo != genre_id
+                new_song.uniqueId = song_info.uniqueId
+
+                # Insert into song_list at the correct position
+                song_list[genre_id].insert(selected_index, new_song)
+
+                # Add new song to tree with retrieved info
+                new_values = (
+                selected_order, "♦ " + song_info.songNameList[langvar.get()][0] if not new_song.isSubgenre else song_info.songNameList[langvar.get()][0], song_id, str(song_info.uniqueId))
+                tree.insert(parent, tree.index(selected_item), values=new_values, tags=(str(genre_id)))
+
+                # Update orders for subsequent songs in both tree and song_list
+                for i in range(selected_index, len(genre_songs)):
+                    item = genre_songs[i]
+                    current_values = tree.item(item)['values']
+                    new_values = tuple([current_values[0] + 1] + list(current_values[1:]))
+                    tree.item(item, values=new_values)
+                    song_list[genre_id][i + 1].musicOrderIndex += 1
+
+                popup.destroy()
+
+            song_id_entry.bind('<Return>', submit)
+            submit_button = tk.Button(popup, text="Add", command=submit)
+            submit_button.grid(row=1, column=1, pady=10)
+
+        def remove_song():
+            selected_item = tree.selection()
+            if not selected_item:
+                messagebox.showwarning("Remove Song", "Please select a song to remove")
+                return
+            if not tree.parent(selected_item[0]):
+                return
+
+            selected_item = selected_item[0]
+            parent = tree.parent(selected_item)
+            genre_id = int(parent.split('_')[1])
+
+            # Get index of selected item and all genre songs
+            genre_songs = tree.get_children(parent)
+            current_index = genre_songs.index(selected_item)
+
+            # Remove from tree
+            tree.delete(selected_item)
+
+            # Remove from song_list
+            song_list[genre_id].pop(current_index)
+
+            # Update order for all subsequent songs in both tree and song_list
+            for i in range(current_index, len(genre_songs) - 1):  # -1 because we removed one
+                item = genre_songs[i + 1]  # +1 because current_index item is deleted
+                current_values = tree.item(item)['values']
+                # Decrease order by 1
+                new_values = tuple([current_values[0] - 1] + list(current_values[1:]))
+                tree.item(item, values=new_values)
+                # Update song_list order
+                song_list[genre_id][i].musicOrderIndex = current_values[0] - 1
+
+        #Controls
+
+        # Add your button to the controls frame
+        controls_frame = tk.Frame(musicorder_window)
+
+        # Define square button dimensions
+        btn_width = 2
+        btn_height = 1
+
+        up_button = tk.Button(controls_frame, text='↑', width=btn_width, height=btn_height)
+        up_button.bind('<ButtonPress-1>', start_move_up)
+        up_button.bind('<ButtonRelease-1>', stop_move_up)
+        up_button.grid(row=0, column=0, padx=2)
+
+        down_button = tk.Button(controls_frame, text='↓', width=btn_width, height=btn_height)
+        down_button.bind('<ButtonPress-1>', start_move_down)
+        down_button.bind('<ButtonRelease-1>', stop_move_down)
+        down_button.grid(row=0, column=1, padx=2)
+
+        # Add some extra spacing
+        ttk.Separator(controls_frame, orient='vertical').grid(row=0, column=2, sticky='ns', padx=5)
+
+        add_button = tk.Button(controls_frame, text='+', width=btn_width, height=btn_height, command=add_song)
+        add_button.grid(row=0, column=3, padx=2)
+
+        remove_button = tk.Button(controls_frame, text='-', width=btn_width, height=btn_height, command=remove_song)
+        remove_button.grid(row=0, column=4, padx=2)
+
+        controls_frame.grid(row=1, column=0, pady=5)
+
+
+        # Create and place the results table
+        tree_frame = ttk.Frame(musicorder_window)
+        tree_frame.grid(row=2, column=0, padx=10, pady=10, sticky='nsew')
+
+        # Create and place the results table - note the change to show="tree headings"
+        tree = ttk.Treeview(tree_frame,
+                            columns=("Music Order", "Title", "SongId", "UniqueId"),
+                            show="tree headings", height=35)  # Changed this line to show tree structure
+
+        # Create vertical scrollbar
+        vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=tree.yview)
+        vsb.pack(side='right', fill='y')
+
+        # Configure the Treeview to use scrollbars
+        tree.configure(yscrollcommand=vsb.set)
+        tree.pack(side='left', fill='both', expand=True)
+
+        # Define headings for the table
+        tree.heading("Music Order", text="Music Order")
+        tree.heading("Title", text="Title")
+        tree.heading("SongId", text="SongId")
+        tree.heading("UniqueId", text="UniqueId")
+
+        # Configure column widths (optional but recommended)
+        tree.column("Music Order", width=75)
+        tree.column("Title", width=275)
+        tree.column("SongId", width=75)
+        tree.column("UniqueId", width=75)
+
+        for genre, color in constants.GENRE_COLOURS.items():
+            tree.tag_configure(str(genre), background=color)
+
+        musicorder_window.grid_rowconfigure(1, weight=1)
+        musicorder_window.grid_columnconfigure(0, weight=1)
+
+        refresh_list()
+
+        # cancel and save button
+
+
+        def save_changes():
+            self.datatable.set_music_order(song_list)
+            musicorder_window.destroy()
+
+        def cancel_changes():
+            musicorder_window.destroy()
+
+        button_frame = ttk.Frame(musicorder_window)
+        button_frame.grid(row=3, column=0, pady=10, padx=10, sticky='e')
+
+        save_button = ttk.Button(button_frame, text='Save', command=save_changes)
+        save_button.pack(side='right', padx=(5, 0))
+
+        cancel_button = ttk.Button(button_frame, text='Cancel', command=cancel_changes)
+        cancel_button.pack(side='right', padx=(5, 0))
 
 
 
@@ -691,16 +1087,16 @@ class Program:
             new_id_candidate = self.new_song_id_entry.get()
             if not new_id_candidate:
                 messagebox.showerror('New Song', 'Enter a Song Id')
-                return  
+                return
             if 3 > len(new_id_candidate) or len(new_id_candidate) > 8:
                 messagebox.showerror('New Song', 'Song Id must be between 3 and 8 characters long')
-                return 
+                return
             if self.datatable.is_song_id_taken(new_id_candidate):
                 messagebox.showerror('New Song', 'Song Id already taken')
                 return
             new_id = new_id_candidate
             self.new_song_window.destroy()
-            
+
         self.new_song_id_entry.bind('<Return>', on_create)
         self.new_song_confirm = tk.Button(self.new_song_window, text="Create", command=on_create) #type: ignore
         self.new_song_confirm.grid(row=1, column=1)
@@ -1304,7 +1700,7 @@ class Program:
         self.decouple_duet_var.set(any(self.song_info.shinuti[i] != self.song_info.shinuti_duet[i] for i in range(5)) or any(self.song_info.shinuti_score[i] != self.song_info.shinuti_score_duet[i] for i in range(5)))
         self.poplate_wordlist_vars()
         self.unique_id_var.set(self.song_info.uniqueId)
-        self.genre_var.set(next((k for k, v in constants.GENRE_MAPPING.items() if v == self.song_info.genreNo), '')) #Do not question this line of code (getting key given value)
+        self.genre_var.set(constants.GENRE_NAME_MAP[self.song_info.genreNo]) #Do not question this line of code (getting key given value)
         self.song_filename_var.set(self.song_info.songFileName)
         self.new_var.set(self.song_info.new)
         self.papamama_var.set(self.song_info.papamama)

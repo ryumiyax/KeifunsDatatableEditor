@@ -11,6 +11,17 @@ GENRE_MAPPING = {
     "7. Classic": 7,
 }
 
+GENRE_NAME_MAP = {
+    0: "0. POP",
+    1: "1. Anime",
+    2: "2. Kids",
+    3: "3. VOCALOID™ Music",
+    4: "4. Game Music",
+    5: "5. NAMCO Original",
+    6: "6. Variety",
+    7: "7. Classic"
+}
+
 GENRE_COLOURS = {
     0: '#49d5eb',
     1: '#fe9e01',

@@ -567,7 +567,6 @@ def parse_and_get_data(tja_file: str) -> SongData:
         impoppable_balloon_s = 0.0 #BTD reference???
         impoppable_balloon_count = 0
         poppable_balloon_count = 0
-        required_renda_speed = 17 #HARDCODED
         for time, count, impoppable, bpm_start in stats['balloons']:
             if impoppable:
                 impoppable_balloon_s += time
@@ -600,7 +599,8 @@ def parse_and_get_data(tja_file: str) -> SongData:
         tenjyou = ret.shinuti[i] * ret.onpu_num[i] + 100 * (floor(required_renda_speed * roll_duration / 1000) + poppable_balloon_count)
         ret.shinuti_score[i] = tenjyou + floor(required_renda_speed * roll_duration) * 100
     return ret
-        
+
+# def calculate_shinuti_score()
     
 if __name__ == '__main__':
     print(parse_and_get_data('C:\\Users\\knunes\\Downloads\\はいよろこんで.tja'))
