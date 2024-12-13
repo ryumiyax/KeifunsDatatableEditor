@@ -211,7 +211,7 @@ class Program:
         self.language_value.set(0)
         self.language_value.trace_add("write", self.on_language_change)
 
-        for i, lang in enumerate(['JPN', 'ENG', 'zh-TW', 'KOR']):
+        for i, lang in enumerate(['JPN', 'ENG', 'zh-TW', 'KOR', 'zh-CN']):
             self.language_radiobuttons.append(tk.Radiobutton(self.language_frame, text=lang, variable=self.language_value, value=i))
             self.language_radiobuttons[i].grid(row=0, column=i)
 
@@ -608,7 +608,7 @@ class Program:
         language_radiobuttons = list()
         langvar.trace_add("write", perform_search)
 
-        for i, lang in enumerate(['JPN', 'ENG', 'zh-TW', 'KOR']):
+        for i, lang in enumerate(['JPN', 'ENG', 'zh-TW', 'KOR', 'zh-CN']):
             language_radiobuttons.append(
                 tk.Radiobutton(language_frame, text=lang, variable=langvar, value=i))
             language_radiobuttons[i].grid(row=0, column=i)
@@ -725,7 +725,7 @@ class Program:
         language_radiobuttons = list()
         langvar.trace_add("write", refresh_list)
 
-        for i, lang in enumerate(['JPN', 'ENG', 'zh-TW', 'KOR']):
+        for i, lang in enumerate(['JPN', 'ENG', 'zh-TW', 'KOR', 'zh-CN']):
             language_radiobuttons.append(
                 tk.Radiobutton(language_frame, text=lang, variable=langvar, value=i))
             language_radiobuttons[i].grid(row=0, column=i)

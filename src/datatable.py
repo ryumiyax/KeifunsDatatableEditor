@@ -18,13 +18,15 @@ When adding a new attribute:
     4. Update set_song_info()
     5. Update export_datatable() (if new file)
 """
+
+
 @dataclass
 class Song:
     id: str = ""
     uniqueId: int = 0
-    songNameList: List[tuple[str, int]] = field(default_factory=lambda: [('', 0), ('', 1), ('', 2), ('', 3)]) #TODO: Change to tuple(tuple) if possible
-    songSubList: List[tuple[str, int]] = field(default_factory=lambda: [('', 0), ('', 1), ('', 2), ('', 3)])
-    songDetailList: List[tuple[str, int]] = field(default_factory=lambda: [('', 0), ('', 0), ('', 0), ('', 0)])
+    songNameList: List[tuple[str, int]] = field(default_factory=lambda: [('', 0), ('', 1), ('', 2), ('', 3), ('', 4)])
+    songSubList: List[tuple[str, int]] = field(default_factory=lambda: [('', 0), ('', 1), ('', 2), ('', 3), ('', 4)])
+    songDetailList: List[tuple[str, int]] = field(default_factory=lambda: [('', 0), ('', 0), ('', 0), ('', 0), ('', 0)])
     genreNo: int = 0
     songFileName: str = ""
     new: bool = False
@@ -44,7 +46,7 @@ class Song:
     music_ai_section: List[int] = field(default_factory=lambda: [5, 5, 5, 5, 5])
     aiOniLevel11: str = ""
     aiUraLevel11: str = ""
-    musicOrder: List[tuple[int,int]] = field(default_factory=lambda: [(0,0), (-1,0), (-1,0), (-1,0), (-1,0), (-1,0), (-1,0), (-1,0)])
+    musicOrder: List[tuple[int, int]] = field(default_factory=lambda: [(0, 0), (-1, 0), (-1, 0), (-1, 0), (-1, 0), (-1, 0), (-1, 0), (-1, 0)])
 
 @dataclass
 class DatatableIndices:
@@ -56,6 +58,7 @@ class DatatableIndices:
     music_attribute: int = -1
     music_ai_section: int = -1
     music_usbsetting: int = -1
+
 
 @dataclass
 class MusicinfoItem:
@@ -151,12 +154,14 @@ class MusicAttributeItem:
     rendaEffect1: str = ""
     fever1: str = ""
 
+
 @dataclass
 class MusicOrderItem:
     genreNo: int = 0
     id: str = ""
     uniqueId: int = 0
     closeDispType: int = 0
+
 
 @dataclass
 class MusicAISectionItem:
@@ -170,11 +175,13 @@ class MusicAISectionItem:
     oniLevel11: str = ""
     uraLevel11: str = ""
 
+
 @dataclass
 class MusicUsbsettingItem:
     id: str = ""
     uniqueId: int = 0
     usbVer: str = ""
+
 
 @dataclass
 class WordlistItem:
@@ -187,6 +194,9 @@ class WordlistItem:
     chineseTFontType: int = 2
     koreanText: str = ""
     koreanFontType: int = 3
+    chineseSText: str = ""
+    chineseSFontType: int = 4
+
 
 @dataclass
 class SongListItem:
@@ -195,8 +205,9 @@ class SongListItem:
     uniqueId: int = 0
     isSubgenre: bool = False
     closeDispType: int = 0
-    title: Tuple[str, str, str, str] = "", "", "", ""
-    sub: Tuple[str, str, str, str] = "", "", "", ""
+    title: Tuple[str, str, str, str, str] = "", "", "", "", ""
+    sub: Tuple[str, str, str, str, str] = "", "", "", "", ""
+
 
 class Datatable:
     """Datatable class"""
@@ -216,7 +227,8 @@ class Datatable:
         self.filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'datatable')
         if not os.path.exists(self.filepath):
             os.makedirs(self.filepath)
-        files_to_find = ['musicinfo.bin', 'wordlist.bin', 'music_attribute.bin', 'music_ai_section.bin', 'music_usbsetting.bin', 'music_order.bin']
+        files_to_find = ['musicinfo.bin', 'wordlist.bin', 'music_attribute.bin', 'music_ai_section.bin',
+                         'music_usbsetting.bin', 'music_order.bin']
         for path, subdirs, files in os.walk(import_path):
             for name in files:
                 if name not in files_to_find:
@@ -224,7 +236,7 @@ class Datatable:
                 full_path = os.path.join(path, name)
                 if os.path.isfile(full_path):
                     encryption.save_file(
-                        file=full_path, #type: ignore
+                        file=full_path,  # type: ignore
                         outdir=os.path.join(self.filepath, name),
                         encrypt=False
                     )
@@ -286,23 +298,22 @@ class Datatable:
             """Loop over datatable objects to find indices"""
             musicinfo_index = self.get_musicinfo_index(id)
 
-
             wordlist_name_index, wordlist_sub_index, wordlist_detail_index = self.get_wordlist_indices(id)
 
             music_attribute_index = -1
-            for i,e in enumerate(self.music_attribute):
+            for i, e in enumerate(self.music_attribute):
                 if e.id == id:
                     music_attribute_index = i
                     break
-            
+
             music_ai_section_index = -1
-            for i,e in enumerate(self.music_ai_section):
+            for i, e in enumerate(self.music_ai_section):
                 if e.id == id:
                     music_ai_section_index = i
                     break
 
             music_usbsetting_index = -1
-            for i,e in enumerate(self.music_usbsetting):
+            for i, e in enumerate(self.music_usbsetting):
                 if e.id == id:
                     music_usbsetting_index = i
                     break
@@ -359,16 +370,16 @@ class Datatable:
                     title=(title_item.japaneseText,
                            title_item.englishUsText,
                            title_item.chineseTText,
-                           title_item.koreanText),
+                           title_item.koreanText,
+                           title_item.chineseSText),
                     sub=(sub_item.japaneseText,
                          sub_item.englishUsText,
                          sub_item.chineseTText,
-                         sub_item.koreanText
+                         sub_item.koreanText,
+                         sub_item.chineseSText
                          )
                 ))
         return ret
-
-
 
     def get_song_info(self, id: str) -> Song:
         indices = self.get_indices(id)
@@ -378,131 +389,134 @@ class Datatable:
         musicinfo_item = self.musicinfo[indices.musicinfo]
         music_attribute_item = self.music_attribute[indices.music_attribute]
         music_ai_section_item = self.music_ai_section[indices.music_ai_section]
-        
-        music_order_indices = [(-1,0), (-1,0), (-1,0), (-1,0), (-1,0), (-1,0), (-1,0), (-1,0)]
+
+        music_order_indices = [(-1, 0), (-1, 0), (-1, 0), (-1, 0), (-1, 0), (-1, 0), (-1, 0), (-1, 0)]
         for genre_no, genre_list in enumerate(self.music_order):
             for i, e in enumerate(genre_list):
                 if e.id == id:
                     music_order_indices[genre_no] = (i, e.closeDispType)
-                    break 
-        
+                    break
+
         dancer = "000_default"
         for dancer_key, dancer_data in config.config.dancers.items():
-            if (music_attribute_item.ensoPartsID1 == dancer_data['ensoPartsID1'] and 
-                music_attribute_item.ensoPartsID2 == dancer_data['ensoPartsID2']):
+            if (music_attribute_item.ensoPartsID1 == dancer_data['ensoPartsID1'] and
+                    music_attribute_item.ensoPartsID2 == dancer_data['ensoPartsID2']):
                 dancer = dancer_key
                 break
-    
+
         return Song(
-            id= id,
-            uniqueId= musicinfo_item.uniqueId,
-            songNameList = [
+            id=id,
+            uniqueId=musicinfo_item.uniqueId,
+            songNameList=[
                 (wordlist_name_item.japaneseText, wordlist_name_item.japaneseFontType),
                 (wordlist_name_item.englishUsText, wordlist_name_item.englishUsFontType),
                 (wordlist_name_item.chineseTText, wordlist_name_item.chineseTFontType),
-                (wordlist_name_item.koreanText, wordlist_name_item.koreanFontType)
+                (wordlist_name_item.koreanText, wordlist_name_item.koreanFontType),
+                (wordlist_name_item.chineseSText, wordlist_name_item.chineseSFontType)
             ],
-            songSubList = [
+            songSubList=[
                 (wordlist_sub_item.japaneseText, wordlist_sub_item.japaneseFontType),
                 (wordlist_sub_item.englishUsText, wordlist_sub_item.englishUsFontType),
                 (wordlist_sub_item.chineseTText, wordlist_sub_item.chineseTFontType),
-                (wordlist_sub_item.koreanText, wordlist_sub_item.koreanFontType)
+                (wordlist_sub_item.koreanText, wordlist_sub_item.koreanFontType),
+                (wordlist_sub_item.chineseSText, wordlist_sub_item.chineseSFontType)
             ],
-            songDetailList = [
+            songDetailList=[
                 (wordlist_detail_item.japaneseText, wordlist_detail_item.japaneseFontType),
                 (wordlist_detail_item.englishUsText, wordlist_detail_item.englishUsFontType),
                 (wordlist_detail_item.chineseTText, wordlist_detail_item.chineseTFontType),
-                (wordlist_detail_item.koreanText, wordlist_detail_item.koreanFontType)
+                (wordlist_detail_item.koreanText, wordlist_detail_item.koreanFontType),
+                (wordlist_detail_item.chineseSText, wordlist_detail_item.chineseSFontType)
             ],
-            genreNo= musicinfo_item.genreNo,
-            songFileName= musicinfo_item.songFileName,
-            new= music_attribute_item.new,
-            doublePlay= music_attribute_item.doublePlay,
-            papamama= musicinfo_item.papamama,
-            dancer= dancer,
-            branch = [
-                musicinfo_item.branchEasy, 
-                musicinfo_item.branchNormal, 
-                musicinfo_item.branchHard, 
-                musicinfo_item.branchMania, 
+            genreNo=musicinfo_item.genreNo,
+            songFileName=musicinfo_item.songFileName,
+            new=music_attribute_item.new,
+            doublePlay=music_attribute_item.doublePlay,
+            papamama=musicinfo_item.papamama,
+            dancer=dancer,
+            branch=[
+                musicinfo_item.branchEasy,
+                musicinfo_item.branchNormal,
+                musicinfo_item.branchHard,
+                musicinfo_item.branchMania,
                 musicinfo_item.branchUra
             ],
-            star = [
-                musicinfo_item.starEasy, 
-                musicinfo_item.starNormal, 
-                musicinfo_item.starHard, 
-                musicinfo_item.starMania, 
+            star=[
+                musicinfo_item.starEasy,
+                musicinfo_item.starNormal,
+                musicinfo_item.starHard,
+                musicinfo_item.starMania,
                 musicinfo_item.starUra
             ],
-            shinuti = [
-                musicinfo_item.shinutiEasy, 
-                musicinfo_item.shinutiNormal, 
-                musicinfo_item.shinutiHard, 
-                musicinfo_item.shinutiMania, 
+            shinuti=[
+                musicinfo_item.shinutiEasy,
+                musicinfo_item.shinutiNormal,
+                musicinfo_item.shinutiHard,
+                musicinfo_item.shinutiMania,
                 musicinfo_item.shinutiUra
             ],
-            shinuti_score = [
-                musicinfo_item.shinutiScoreEasy, 
-                musicinfo_item.shinutiScoreNormal, 
-                musicinfo_item.shinutiScoreHard, 
-                musicinfo_item.shinutiScoreMania, 
+            shinuti_score=[
+                musicinfo_item.shinutiScoreEasy,
+                musicinfo_item.shinutiScoreNormal,
+                musicinfo_item.shinutiScoreHard,
+                musicinfo_item.shinutiScoreMania,
                 musicinfo_item.shinutiScoreUra
             ],
-            shinuti_duet = [
-                musicinfo_item.shinutiEasyDuet, 
-                musicinfo_item.shinutiNormalDuet, 
-                musicinfo_item.shinutiHardDuet, 
-                musicinfo_item.shinutiManiaDuet, 
+            shinuti_duet=[
+                musicinfo_item.shinutiEasyDuet,
+                musicinfo_item.shinutiNormalDuet,
+                musicinfo_item.shinutiHardDuet,
+                musicinfo_item.shinutiManiaDuet,
                 musicinfo_item.shinutiUraDuet
             ],
-            shinuti_score_duet = [
-                musicinfo_item.shinutiScoreEasyDuet, 
-                musicinfo_item.shinutiScoreNormalDuet, 
-                musicinfo_item.shinutiScoreHardDuet, 
-                musicinfo_item.shinutiScoreManiaDuet, 
+            shinuti_score_duet=[
+                musicinfo_item.shinutiScoreEasyDuet,
+                musicinfo_item.shinutiScoreNormalDuet,
+                musicinfo_item.shinutiScoreHardDuet,
+                musicinfo_item.shinutiScoreManiaDuet,
                 musicinfo_item.shinutiScoreUraDuet
             ],
-            
-            onpu_num = [
-                musicinfo_item.easyOnpuNum, 
-                musicinfo_item.normalOnpuNum, 
-                musicinfo_item.hardOnpuNum, 
-                musicinfo_item.maniaOnpuNum, 
+
+            onpu_num=[
+                musicinfo_item.easyOnpuNum,
+                musicinfo_item.normalOnpuNum,
+                musicinfo_item.hardOnpuNum,
+                musicinfo_item.maniaOnpuNum,
                 musicinfo_item.uraOnpuNum
             ],
-            renda_time = [
-                musicinfo_item.rendaTimeEasy, 
-                musicinfo_item.rendaTimeNormal, 
-                musicinfo_item.rendaTimeHard, 
-                musicinfo_item.rendaTimeMania, 
+            renda_time=[
+                musicinfo_item.rendaTimeEasy,
+                musicinfo_item.rendaTimeNormal,
+                musicinfo_item.rendaTimeHard,
+                musicinfo_item.rendaTimeMania,
                 musicinfo_item.rendaTimeUra
             ],
-            fuusen_total = [
-                musicinfo_item.fuusenTotalEasy, 
-                musicinfo_item.fuusenTotalNormal, 
-                musicinfo_item.fuusenTotalHard, 
-                musicinfo_item.fuusenTotalMania, 
+            fuusen_total=[
+                musicinfo_item.fuusenTotalEasy,
+                musicinfo_item.fuusenTotalNormal,
+                musicinfo_item.fuusenTotalHard,
+                musicinfo_item.fuusenTotalMania,
                 musicinfo_item.fuusenTotalUra
             ],
-            spike_on = [
+            spike_on=[
                 musicinfo_item.spikeOnEasy,
                 musicinfo_item.spikeOnNormal,
                 musicinfo_item.spikeOnHard,
                 musicinfo_item.spikeOnOni,
                 musicinfo_item.spikeOnUra
             ],
-            music_ai_section = [
-                music_ai_section_item.easy, 
-                music_ai_section_item.normal, 
-                music_ai_section_item.hard, 
-                music_ai_section_item.oni, 
+            music_ai_section=[
+                music_ai_section_item.easy,
+                music_ai_section_item.normal,
+                music_ai_section_item.hard,
+                music_ai_section_item.oni,
                 music_ai_section_item.ura
             ],
-            aiOniLevel11= music_ai_section_item.oniLevel11,
-            aiUraLevel11= music_ai_section_item.uraLevel11,
-            musicOrder= music_order_indices
+            aiOniLevel11=music_ai_section_item.oniLevel11,
+            aiUraLevel11=music_ai_section_item.uraLevel11,
+            musicOrder=music_order_indices
         )
-    
+
     def set_song_info(self, song_info: Song) -> None:
         indices: DatatableIndices
         try:
@@ -515,7 +529,8 @@ class Datatable:
             ('japaneseText', 'japaneseFontType'),
             ('englishUsText', 'englishUsFontType'),
             ('chineseTText', 'chineseTFontType'),
-            ('koreanText', 'koreanFontType')
+            ('koreanText', 'koreanFontType'),
+            ('chineseSText', 'chineseSFontType')
         ]
 
         # Updating songNameList
@@ -546,7 +561,7 @@ class Datatable:
         self.music_attribute[indices.music_attribute].new = song_info.new
         self.music_attribute[indices.music_attribute].doublePlay = song_info.doublePlay
 
-        dancer_key = song_info.dancer 
+        dancer_key = song_info.dancer
         if dancer_key != "000_default":
             # Get the dancer data from the config
             if dancer_key in config.config.dancers:
@@ -572,16 +587,19 @@ class Datatable:
         for i, attribute in enumerate(['shinutiEasy', 'shinutiNormal', 'shinutiHard', 'shinutiMania', 'shinutiUra']):
             setattr(self.musicinfo[indices.musicinfo], attribute, song_info.shinuti[i])
 
-
         # For shinuti_score
-        for i, attribute in enumerate(['shinutiScoreEasy', 'shinutiScoreNormal', 'shinutiScoreHard', 'shinutiScoreMania', 'shinutiScoreUra']):
+        for i, attribute in enumerate(
+                ['shinutiScoreEasy', 'shinutiScoreNormal', 'shinutiScoreHard', 'shinutiScoreMania', 'shinutiScoreUra']):
             setattr(self.musicinfo[indices.musicinfo], attribute, song_info.shinuti_score[i])
 
-        #For Duet
-        for i, attribute in enumerate(['shinutiEasyDuet', 'shinutiNormalDuet', 'shinutiHardDuet', 'shinutiManiaDuet', 'shinutiUraDuet']):
+        # For Duet
+        for i, attribute in enumerate(
+                ['shinutiEasyDuet', 'shinutiNormalDuet', 'shinutiHardDuet', 'shinutiManiaDuet', 'shinutiUraDuet']):
             setattr(self.musicinfo[indices.musicinfo], attribute, (song_info.shinuti_duet)[i])
 
-        for i, attribute in enumerate(['shinutiScoreEasyDuet', 'shinutiScoreNormalDuet', 'shinutiScoreHardDuet', 'shinutiScoreManiaDuet', 'shinutiScoreUraDuet']):
+        for i, attribute in enumerate(
+                ['shinutiScoreEasyDuet', 'shinutiScoreNormalDuet', 'shinutiScoreHardDuet', 'shinutiScoreManiaDuet',
+                 'shinutiScoreUraDuet']):
             setattr(self.musicinfo[indices.musicinfo], attribute, (song_info.shinuti_score_duet)[i])
 
         # For onpu_num
@@ -589,35 +607,38 @@ class Datatable:
             setattr(self.musicinfo[indices.musicinfo], attribute, song_info.onpu_num[i])
 
         # For renda_time
-        for i, attribute in enumerate(['rendaTimeEasy', 'rendaTimeNormal', 'rendaTimeHard', 'rendaTimeMania', 'rendaTimeUra']):
+        for i, attribute in enumerate(
+                ['rendaTimeEasy', 'rendaTimeNormal', 'rendaTimeHard', 'rendaTimeMania', 'rendaTimeUra']):
             setattr(self.musicinfo[indices.musicinfo], attribute, song_info.renda_time[i])
 
         # For fuusen_total
-        for i, attribute in enumerate(['fuusenTotalEasy', 'fuusenTotalNormal', 'fuusenTotalHard', 'fuusenTotalMania', 'fuusenTotalUra']):
+        for i, attribute in enumerate(
+                ['fuusenTotalEasy', 'fuusenTotalNormal', 'fuusenTotalHard', 'fuusenTotalMania', 'fuusenTotalUra']):
             setattr(self.musicinfo[indices.musicinfo], attribute, song_info.fuusen_total[i])
-        
+
         # For spike_on
         for i, attribute in enumerate(['spikeOnEasy', 'spikeOnNormal', 'spikeOnHard', 'spikeOnOni', 'spikeOnUra']):
             setattr(self.musicinfo[indices.musicinfo], attribute, song_info.spike_on[i])
-        
-        #For ai section
+
+        # For ai section
         for i, attribute in enumerate(['easy', 'normal', 'hard', 'oni', 'ura']):
             setattr(self.music_ai_section[indices.music_ai_section], attribute, song_info.music_ai_section[i])
-        
+
         self.music_ai_section[indices.music_ai_section].oniLevel11 = song_info.aiOniLevel11
         self.music_ai_section[indices.music_ai_section].uraLevel11 = song_info.aiUraLevel11
 
         ### Music Order
 
-        #Delete from music order
+        # Delete from music order
         for genre_list in self.music_order:
             genre_list[:] = [item for item in genre_list if item.id != song_info.id]
 
         for genre_no, (new_position, close_disp_type) in enumerate(song_info.musicOrder):
             if new_position > -1:
                 # Create a new MusicOrderItem for this genre if not already present
-                song_item = MusicOrderItem(genreNo=genre_no, id=song_info.id, uniqueId=song_info.uniqueId, closeDispType=close_disp_type)
-                
+                song_item = MusicOrderItem(genreNo=genre_no, id=song_info.id, uniqueId=song_info.uniqueId,
+                                           closeDispType=close_disp_type)
+
                 # Insert into the genre list at the specified position
                 genre_list = self.music_order[genre_no]
                 if new_position >= len(genre_list):
@@ -664,13 +685,14 @@ class Datatable:
             if song_id != id:  # Skip the deleted song
                 # Update wordlist indices
                 for deleted_index, _ in wordlist_indices_copy:
-                    for current_song_index, attr in zip([song_indices.wordlist_name, song_indices.wordlist_sub, song_indices.wordlist_detail], ["wordlist_name", "wordlist_sub", "wordlist_detail"]):
+                    for current_song_index, attr in zip(
+                            [song_indices.wordlist_name, song_indices.wordlist_sub, song_indices.wordlist_detail],
+                            ["wordlist_name", "wordlist_sub", "wordlist_detail"]):
                         if current_song_index > deleted_index:
                             setattr(song_indices, attr, current_song_index - 1)
                     for k, v in self.wordlist_indices:
                         if any(x > deleted_index for x in v):
                             self.wordlist_indices[k] = tuple([x - 1 if x > deleted_index else x for x in v])
-
 
                 # Update other indices
                 if song_indices.musicinfo > deleted_indices.musicinfo:
@@ -704,7 +726,6 @@ class Datatable:
         for order in self.music_order:
             order[:] = [item for item in order if item.id != id]
 
-
     def is_song_id_taken(self, song_id: str) -> bool:
         if song_id in self.indices: return True
         for e in self.musicinfo:
@@ -715,16 +736,17 @@ class Datatable:
         if uniqueId in self.uid_musicinfo_index_mapping:
             return True
         for i, e in enumerate(self.musicinfo):
-            if e.uniqueId == uniqueId: 
+            if e.uniqueId == uniqueId:
                 self.uid_musicinfo_index_mapping[e.uniqueId] = i
                 return True
         return False
-    
-    def update_uid(self, old_uniqueId: int, new_uniqueId: int) -> None: #snake and camel case in one variable name is a first
+
+    def update_uid(self, old_uniqueId: int,
+                   new_uniqueId: int) -> None:  # snake and camel case in one variable name is a first
         """THIS FUNCTION ASSUMES NEW UNIQUE ID IS INDEED UNIQUE!!!!!"""
         if old_uniqueId not in self.uid_musicinfo_index_mapping:
             for i, e in enumerate(self.musicinfo):
-                if e.uniqueId == old_uniqueId: 
+                if e.uniqueId == old_uniqueId:
                     self.uid_musicinfo_index_mapping[e.uniqueId] = i
                     break
         song_id = self.musicinfo[self.uid_musicinfo_index_mapping[old_uniqueId]].id
@@ -802,14 +824,13 @@ class Datatable:
             except TypeError as e:
                 print(f"Failed to create MusicAttributeItem from {item.get('id', 'Unknown')}: {e}")
 
-
     def parse_music_order(self) -> None:
         with open(os.path.join(self.filepath, 'music_order.json'), 'r', encoding='utf-8') as f:
             data_dict = json.load(f)  # Load JSON data as a Python dictionary
 
         defaults = MusicOrderItem().__dict__
 
-        self.music_order = [[] for _ in range(8)] 
+        self.music_order = [[] for _ in range(8)]
         # Convert the list of dictionaries to a list of Item objects
         for item in data_dict['items']:
             try:
@@ -828,7 +849,6 @@ class Datatable:
             except TypeError as e:
                 print(f"Failed to create MusicOrderItem from {item.get('id', 'unknown')}: {e}")
 
-        
     def parse_music_AI_section(self) -> None:
         with open(os.path.join(self.filepath, 'music_ai_section.json'), 'r', encoding='utf-8') as f:
             data_dict = json.load(f)  # Load JSON data as a Python dictionary
@@ -878,9 +898,9 @@ class Datatable:
         # Convert the list of dictionaries to a list of WordlistItem objects
         for item in data_dict['items']:
             try:
-                # Remove 'chineseSText' and 'chineseSFontType' if they exist in the JSON data
-                item.pop('chineseSText', None)
-                item.pop('chineseSFontType', None)
+                # # Remove 'chineseSText' and 'chineseSFontType' if they exist in the JSON data
+                # item.pop('chineseSText', None)
+                # item.pop('chineseSFontType', None)
 
                 # Use dictionary unpacking with defaults
                 full_item = {**defaults, **item}
@@ -897,19 +917,19 @@ class Datatable:
 
         for item in self.musicinfo:
             item_dict = asdict(item)
-            
+
             # Check and cast each rendaTime field
             for field in renda_time_fields:
                 if item_dict[field].is_integer():
                     item_dict[field] = int(item_dict[field])
-        
+
             items_list.append(item_dict)
         data_dict = {"items": items_list}
 
         # Write the dictionary to a JSON file
         with open(os.path.join(folder_path, 'musicinfo.json'), 'w', encoding='utf-8') as f:
             json.dump(data_dict, f, ensure_ascii=False, separators=(',', ':'))
-        
+
         # Export wordlist
         items_list = [asdict(item) for item in self.wordlist]
         data_dict = {"items": items_list}
@@ -933,7 +953,7 @@ class Datatable:
         data_dict = {"items": items_list}
         with open(os.path.join(folder_path, 'music_usbsetting.json'), 'w', encoding='utf-8') as f:
             json.dump(data_dict, f, ensure_ascii=False, separators=(',', ':'))
-        
+
         # Flatten the list of lists for music_order
         flattened_music_order = [item for sublist in self.music_order for item in sublist]
 
@@ -947,14 +967,14 @@ class Datatable:
 
         for path, subdirs, files in os.walk(folder_path):
             for name in files:
-                if name not in ['musicinfo.json', 'wordlist.json', 'music_attribute.json', 'music_ai_section.json', 'music_usbsetting.json', 'music_order.json']:
+                if name not in ['musicinfo.json', 'wordlist.json', 'music_attribute.json', 'music_ai_section.json',
+                                'music_usbsetting.json', 'music_order.json']:
                     continue
                 full_path = os.path.join(path, name)
                 if os.path.isfile(full_path):
                     encryption.save_file(
-                        file=full_path, #type: ignore
+                        file=full_path,  # type: ignore
                         outdir=full_path,
                         encrypt=True,
                     )
                     os.remove(full_path)
-        

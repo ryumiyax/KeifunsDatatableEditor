@@ -38,3 +38,4 @@ class Language(Enum):
     ENG = 1
     zh_TW = 2
     KOR = 3
+    zh_CN = 4
