@@ -913,7 +913,7 @@ class Program:
                 new_song.musicOrderIndex = selected_order
                 new_song.id = song_id
                 new_song.title = [x for (x, _) in song_info.songNameList]  # Use the actual song names
-                new_song.isSubgenre = song_info.genreNo != genre_id
+                new_song.new = self.datatable.is_song_new(song_id)
                 new_song.uniqueId = song_info.uniqueId
 
                 # Insert into song_list at the correct position
@@ -921,7 +921,7 @@ class Program:
 
                 # Add new song to tree with retrieved info
                 new_values = (
-                selected_order, "♦ " + song_info.songNameList[langvar.get()][0] if self.datatable.is_song_new(song_id) else song_info.songNameList[langvar.get()][0], song_id, str(song_info.uniqueId))
+                selected_order, "♦ " + song_info.songNameList[langvar.get()][0] if new_song.new else song_info.songNameList[langvar.get()][0], song_id, str(song_info.uniqueId))
                 tree.insert(parent, tree.index(selected_item), values=new_values, tags=(str(genre_id)))
 
                 # Update orders for subsequent songs in both tree and song_list
@@ -1000,19 +1000,27 @@ class Program:
             current_title = song.songNameList[langvar.get()][0]
 
             # Update title in tree based on whether it's in our change set
-            new_values = list(values)
             # XOR operation: either in changed_set and not new, or new and not in changed_set
             will_be_new = (song_id in changed_new_status) != song.new
-            if will_be_new:
-                new_values[1] = f"♦ {current_title}"
-            else:
-                new_values[1] = current_title
 
-            tree.item(item, values=tuple(new_values))
+            for genre_id in range(len(song_list)):
+                genre_iid = f"genre_{genre_id}"
+                genre_items = tree.get_children(genre_iid)
 
-            # Update song_list
-            song_list[genre_id][current_index].new = will_be_new
+                # Find all instances of this song in the current genre
+                for genre_item in genre_items:
+                    item_values = tree.item(genre_item)['values']
+                    if item_values[2] == song_id:  # Match song ID
+                        new_values = list(item_values)
+                        if will_be_new:
+                            new_values[1] = f"♦ {current_title}"
+                        else:
+                            new_values[1] = current_title
+                        tree.item(genre_item, values=tuple(new_values))
 
+                        # Update song_list for this genre
+                        current_index = genre_items.index(genre_item)
+                        song_list[genre_id][current_index].new = will_be_new
 
 
 
