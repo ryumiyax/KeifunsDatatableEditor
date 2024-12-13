@@ -5,6 +5,9 @@ DANGER: No one should ever attempt to maintain this codebase
 import tkinter as tk
 import os
 import sys
+
+from select import select
+
 from src import datatable as dt
 from tkinter import ttk, messagebox, filedialog
 from PIL import Image, ImageTk
@@ -690,7 +693,7 @@ class Program:
                     genre_iid = f"genre_{genre}"
                     for song in songs:
                         values = (song.musicOrderIndex,
-                                  "♦ " + song.title[langvar.get()] if not song.isSubgenre else song.title[langvar.get()],  # add star for main
+                                  "♦ " + song.title[langvar.get()] if song.new else song.title[langvar.get()],  # add star for main
                                   song.id,
                                   song.uniqueId)
                         tree.insert(genre_iid, tk.END, values=values, tags=(str(genre)))
@@ -703,7 +706,7 @@ class Program:
                         current_values = tree.item(item)['values']
                         new_values = (
                             current_values[0],  # musicOrderIndex
-                            "♦ " + song.title[langvar.get()] if not song.isSubgenre else song.title[langvar.get()],  # add star for main
+                            "♦ " + song.title[langvar.get()] if song.new else song.title[langvar.get()],  # add star for main
                             current_values[2],  # id
                             current_values[3]  # uniqueId
                         )
@@ -816,6 +819,8 @@ class Program:
         move_up_loop = None
         move_down_loop = None
 
+        changed_new_status = set()
+
         def start_move_down(event=None):
             if not tree.selection():  # Check if anything is selected
                 return
@@ -916,7 +921,7 @@ class Program:
 
                 # Add new song to tree with retrieved info
                 new_values = (
-                selected_order, "♦ " + song_info.songNameList[langvar.get()][0] if not new_song.isSubgenre else song_info.songNameList[langvar.get()][0], song_id, str(song_info.uniqueId))
+                selected_order, "♦ " + song_info.songNameList[langvar.get()][0] if self.datatable.is_song_new(song_id) else song_info.songNameList[langvar.get()][0], song_id, str(song_info.uniqueId))
                 tree.insert(parent, tree.index(selected_item), values=new_values, tags=(str(genre_id)))
 
                 # Update orders for subsequent songs in both tree and song_list
@@ -965,6 +970,52 @@ class Program:
                 # Update song_list order
                 song_list[genre_id][i].musicOrderIndex = current_values[0] - 1
 
+        def toggle_new():
+            nonlocal tree, song_list, changed_new_status
+            selected_item = tree.selection()
+            if not selected_item:
+                return
+            item = selected_item[0]
+            if not tree.parent(item):
+                return
+
+            parent = tree.parent(item)
+            genre_id = int(parent.split('_')[1])
+
+            # Get index of selected item within its genre
+            genre_songs = tree.get_children(parent)
+            current_index = genre_songs.index(item)
+
+            values = tree.item(item)['values']
+            song_id = values[2]
+
+            # Instead of immediately toggling, add/remove from set
+            if song_id in changed_new_status:
+                changed_new_status.remove(song_id)
+            else:
+                changed_new_status.add(song_id)
+
+            # Get current song info without toggling
+            song = self.datatable.get_song_info(song_id)
+            current_title = song.songNameList[langvar.get()][0]
+
+            # Update title in tree based on whether it's in our change set
+            new_values = list(values)
+            # XOR operation: either in changed_set and not new, or new and not in changed_set
+            will_be_new = (song_id in changed_new_status) != song.new
+            if will_be_new:
+                new_values[1] = f"♦ {current_title}"
+            else:
+                new_values[1] = current_title
+
+            tree.item(item, values=tuple(new_values))
+
+            # Update song_list
+            song_list[genre_id][current_index].new = will_be_new
+
+
+
+
         #Controls
 
         # Add your button to the controls frame
@@ -992,6 +1043,11 @@ class Program:
 
         remove_button = tk.Button(controls_frame, text='-', width=btn_width, height=btn_height, command=remove_song)
         remove_button.grid(row=0, column=4, padx=2)
+
+        ttk.Separator(controls_frame, orient='vertical').grid(row=0, column=5, sticky='ns', padx=5)
+
+        toggle_new_button = tk.Button(controls_frame, text='♦ Toggle New', command=toggle_new)
+        toggle_new_button.grid(row=0, column=6, padx=2)
 
         controls_frame.grid(row=1, column=0, pady=5)
 
@@ -1038,6 +1094,8 @@ class Program:
 
         def save_changes():
             self.datatable.set_music_order(song_list)
+            for song_id in changed_new_status:
+                self.datatable.toggle_song_new(song_id)
             musicorder_window.destroy()
 
         def cancel_changes():
@@ -1051,6 +1109,7 @@ class Program:
 
         cancel_button = ttk.Button(button_frame, text='Cancel', command=cancel_changes)
         cancel_button.pack(side='right', padx=(5, 0))
+
 
 
 
