@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass, fields, field
 from typing import List, Dict
 import json
@@ -254,15 +255,25 @@ class Datatable:
         self.parse_music_AI_section()
         self.parse_music_usbsetting()
 
-    def create_default_item(self, field_name: str):
+    def create_default_item(self, field_name: str, song_id: str, unique_id: int):
         if field_name == 'musicinfo':
-            return MusicinfoItem()
+            return MusicinfoItem(id=song_id, uniqueId=unique_id)
         elif field_name == 'music_attribute':
-            return MusicAttributeItem()
+            return MusicAttributeItem(id=song_id, uniqueId=unique_id)
         elif field_name == 'music_ai_section':
-            return MusicAISectionItem()
+            return MusicAISectionItem(id=song_id, uniqueId=unique_id)
         elif field_name == 'music_usbsetting':
-            return MusicUsbsettingItem()
+            return MusicUsbsettingItem(id=song_id, uniqueId=unique_id)
+        else:
+            raise ValueError(f"Unknown field name: {field_name}")
+
+    def set_index(self, field_name: str, song_id: str):
+        if field_name == 'musicinfo':
+            self.musicinfo_indices[song_id] = len(self.musicinfo)
+        elif field_name == 'music_attribute':
+            self.music_attribute_indices[song_id] = len(self.music_attribute)
+        elif field_name == 'music_ai_section' or field_name == 'music_usbsetting':
+            return
         else:
             raise ValueError(f"Unknown field name: {field_name}")
 
@@ -335,15 +346,20 @@ class Datatable:
                     if field.name.startswith('wordlist'):
                         new_index = len(self.wordlist)
                         parts = field.name.split('_')
-                        if parts[1] in ['detail', 'sub']:
-                            key = f"song_{parts[1]}_{id}"
+                        if parts[1] == "detail":
+                            key = f"song_detail_{id}"
+                            self.wordlist_indices[id] = (self.wordlist_indices[id][0], self.wordlist_indices[id][1], new_index)
+                        elif parts[1] == "sub":
+                            key = f"song_sub_{id}"
+                            self.wordlist_indices[id] = (self.wordlist_indices[id][0], new_index, self.wordlist_indices[id][2])
                         else:
                             key = f"song_{id}"
-
+                            self.wordlist_indices[id] = (new_index, self.wordlist_indices[id][1], self.wordlist_indices[id][2])
                         self.wordlist.append(WordlistItem(key=key))
                     else:
                         new_index = len(getattr(self, field.name))
-                        getattr(self, field.name).append(self.create_default_item(field.name))
+                        self.set_index(field.name, id)
+                        getattr(self, field.name).append(self.create_default_item(field.name, id, self.musicinfo[musicinfo_index].uniqueId))
                     setattr(indices, field.name, new_index)
 
             self.indices[id] = indices
@@ -396,6 +412,15 @@ class Datatable:
                 ))
         return ret
 
+    def get_song_music_order(self, id: str):
+        music_order_indices = [(-1, 0), (-1, 0), (-1, 0), (-1, 0), (-1, 0), (-1, 0), (-1, 0), (-1, 0)]
+        for genre_no, genre_list in enumerate(self.music_order):
+            for i, e in enumerate(genre_list):
+                if e.id == id:
+                    music_order_indices[genre_no] = (i, e.closeDispType)
+                    break
+        return music_order_indices
+
     def get_song_info(self, id: str) -> Song:
         indices = self.get_indices(id)
         wordlist_name_item = self.wordlist[indices.wordlist_name]
@@ -405,12 +430,7 @@ class Datatable:
         music_attribute_item = self.music_attribute[indices.music_attribute]
         music_ai_section_item = self.music_ai_section[indices.music_ai_section]
 
-        music_order_indices = [(-1, 0), (-1, 0), (-1, 0), (-1, 0), (-1, 0), (-1, 0), (-1, 0), (-1, 0)]
-        for genre_no, genre_list in enumerate(self.music_order):
-            for i, e in enumerate(genre_list):
-                if e.id == id:
-                    music_order_indices[genre_no] = (i, e.closeDispType)
-                    break
+        music_order_indices = self.get_song_music_order(id)
 
         dancer = "000_default"
         for dancer_key, dancer_data in config.config.dancers.items():
@@ -537,6 +557,8 @@ class Datatable:
         try:
             indices = self.get_indices(song_info.id)
         except KeyError:
+            #New song
+            self.musicinfo_indices[song_info.id] = len(self.musicinfo)
             self.musicinfo.append(MusicinfoItem(id=song_info.id, uniqueId=song_info.uniqueId))
             indices = self.get_indices(song_info.id)
 
@@ -917,7 +939,7 @@ class Datatable:
         defaults = WordlistItem().__dict__
 
         self.wordlist = []
-
+        i = 0
         # Convert the list of dictionaries to a list of WordlistItem objects
         for item in data_dict['items']:
             try:
@@ -930,9 +952,30 @@ class Datatable:
 
                 # Create the WordlistItem using the filtered dictionary
                 wordlist_item = WordlistItem(**full_item)
+
+                # #Ignore blank wordlist items
+                # if wordlist_item.japaneseText == "" and wordlist_item.englishUsText == "" and wordlist_item.chineseTText == "" and wordlist_item.koreanText == "" and wordlist_item.chineseSText == "":
+                #     continue
+
+                if wordlist_item.key.startswith("song"):
+                    song_id = wordlist_item.key.split('_')[-1]  # gets the last part after splitting by '_'
+
+                    if song_id not in self.wordlist_indices:
+                        self.wordlist_indices[song_id] = (-1, -1, -1)
+
+                    # Now check each condition
+                    if wordlist_item.key.startswith('song_detail_') and self.wordlist_indices[song_id][2] == -1:
+                        self.wordlist_indices[song_id] = (self.wordlist_indices[song_id][0], self.wordlist_indices[song_id][1], i)
+                    elif wordlist_item.key.startswith('song_sub_') and self.wordlist_indices[song_id][1] == -1:
+                        self.wordlist_indices[song_id] = (self.wordlist_indices[song_id][0], i, self.wordlist_indices[song_id][2])
+                    elif wordlist_item.key.startswith('song_') and self.wordlist_indices[song_id][0] == -1:
+                        self.wordlist_indices[song_id] = (i, self.wordlist_indices[song_id][1], self.wordlist_indices[song_id][2])
+
                 self.wordlist.append(wordlist_item)
+                i += 1
             except TypeError as e:
                 print(f"Failed to create WordlistItem from {item.get('id', 'unknown')}: {e}")
+
 
     def export_datatable(self, folder_path: str) -> None:
         items_list = []

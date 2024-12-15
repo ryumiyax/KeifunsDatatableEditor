@@ -2,9 +2,10 @@ import json
 import os
 
 class Config:
-    datatableKey: str
-    fumenKey: str
-    gameFilesOutDir: str
+    datatable_key: str
+    fumen_key: str
+    game_files_out_dir: str
+    default_required_renda_speed: float
     dancers: dict
 
     def __init__(self) -> None:
@@ -20,6 +21,7 @@ class Config:
             "datatableKey": "3530304242323633353537423431384139353134383346433246464231354534",
             "fumenKey": "4434423946383537303842433443383030333843444132343339373531353830",
             "gameFilesOutDir": "",
+            "defaultRequiredRendaSpeed": 17,
             "dancers": {
                 "001_miku": {
                     "ensoPartsID1": 1,
@@ -338,12 +340,19 @@ class Config:
         if 'datatableKey' not in d or not d['datatableKey']:
             d['datatableKey'] = default_config['datatableKey']
             updated = True
+
         if 'fumenKey' not in d or not d['fumenKey']:
             d['fumenKey'] = default_config['fumenKey']
             updated = True
+
         if 'gameFilesOutDir' not in d:
             d['gameFilesOutDir'] = default_config['gameFilesOutDir']
             updated = True
+
+        if 'defaultRequiredRendaSpeed' not in d:
+            d['defaultRequiredRendaSpeed'] = default_config['defaultRequiredRendaSpeed']
+            updated = True
+
         if 'dancers' not in d:
             d['dancers'] = default_config['dancers']
             updated = True
@@ -354,28 +363,33 @@ class Config:
                 json.dump(d, config_file, indent=4)
 
         # Set class attributes
-        self.datatableKey = d['datatableKey']
-        self.fumenKey = d['fumenKey']
-        self.gameFilesOutDir = d['gameFilesOutDir']
+        self.datatable_key = d['datatableKey']
+        self.fumen_key = d['fumenKey']
+        self.game_files_out_dir = d['gameFilesOutDir']
+        self.default_required_renda_speed = d['defaultRequiredRendaSpeed']
         self.dancers = d['dancers']
 
-    def update_keys(self, datatableKey: str, fumenKey: str) -> None:
+    def update_keys(self, datatable_key: str, fumen_key: str) -> None:
         """Update the configuration and save it to the config.json file."""
         # Update the class attributes
-        self.datatableKey = datatableKey
-        self.fumenKey = fumenKey
+        self.datatable_key = datatable_key
+        self.fumen_key = fumen_key
         self.write_back_to_json()
 
     def update_game_files_out_dir(self, game_files_out_dir: str):
-        self.gameFilesOutDir = game_files_out_dir
+        self.game_files_out_dir = game_files_out_dir
+        self.write_back_to_json()
+
+    def update_default_required_renda_speed(self, default_required_renda_speed: float):
+        self.default_required_renda_speed = default_required_renda_speed
         self.write_back_to_json()
 
     def write_back_to_json(self):
         # Update the configuration dictionary
         updated_config = {
-            "datatableKey": self.datatableKey,
-            "fumenKey": self.fumenKey,
-            "gameFilesOutDir": self.gameFilesOutDir,
+            "datatableKey": self.datatable_key,
+            "fumenKey": self.fumen_key,
+            "gameFilesOutDir": self.game_files_out_dir,
             "dancers": self.dancers
         }
 

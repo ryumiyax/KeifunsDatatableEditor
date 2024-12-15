@@ -158,23 +158,28 @@ class Program:
         self.file_menu.add_command(label="New Song", accelerator="Ctrl+N", command=self.on_new_song) 
         self.file_menu.add_command(label="New Song From TJA", accelerator="Ctrl+Shift+N", command=self.on_new_song_tja) 
         self.file_menu.add_separator()
-        self.file_menu.add_command(label="Configure Keys", accelerator="Ctrl+,", command=self.create_config_window)
+        self.file_menu.add_command(label="Settings", accelerator="Ctrl+,", command=self.create_settings_window)
         self.file_menu.add_separator()
         self.file_menu.add_command(label="Exit", command=self.window.quit)
         self.menu_bar.add_cascade(label="File", menu=self.file_menu)
 
-        #Utilities Menu
+        #Edit Menu
 
-        self.util_menu = tk.Menu(self.menu_bar, tearoff=0)
-        self.util_menu.add_command(label="Add Ura to Chart", accelerator="Ctrl+U", command=self.on_add_ura)
-        self.util_menu.add_command(label="Search", accelerator="Ctrl+F", command=self.search_view)
-        self.util_menu.add_command(label="Music Order", accelerator="Ctrl+M", command=self.music_order_view)
-        self.menu_bar.add_cascade(label="Utilities", menu=self.util_menu)
+        self.edit_menu = tk.Menu(self.menu_bar, tearoff=0)
+        self.edit_menu.add_command(label="Add Ura Chart", accelerator="Ctrl+U", command=self.on_add_ura)
+        self.menu_bar.add_cascade(label="Edit", menu=self.edit_menu)
+
+        #Window Menu
+
+        self.window_menu = tk.Menu(self.menu_bar, tearoff=0)
+        self.window_menu.add_command(label="Search", accelerator="Ctrl+F", command=self.search_view)
+        self.window_menu.add_command(label="Music Order", accelerator="Ctrl+M", command=self.music_order_view)
+        self.menu_bar.add_cascade(label="Window", menu=self.window_menu)
 
         #Help Menu
         
         self.help_menu = tk.Menu(self.menu_bar, tearoff=0)
-        self.help_menu.add_command(label="About", command=self.show_about)
+        self.help_menu.add_command(label="About", command=self.open_repo)
         self.menu_bar.add_cascade(label="Help", menu=self.help_menu)
 
         self.window.config(menu=self.menu_bar)
@@ -185,7 +190,7 @@ class Program:
         self.window.bind("<Control-N>", self.on_new_song_tja) #type: ignore
         self.window.bind("<Control-o>", self.open_datatable) #type: ignore
         self.window.bind("<Control-s>", self.save_datatable) #type: ignore
-        self.window.bind("<Control-,>", self.create_config_window) #type: ignore
+        self.window.bind("<Control-,>", self.create_settings_window) #type: ignore
         self.window.bind("<Control-u>", self.on_add_ura)  # type: ignore
         self.window.bind("<Control-f>", self.search_view)
         self.window.bind("<Control-m>", self.music_order_view)
@@ -460,6 +465,12 @@ class Program:
             for widget in self.difficulty_info_sub_frames[i].winfo_children():
                 widget.grid_configure(padx=5, pady=1)
 
+        self.star_label = tk.Label(self.window, text="Enjoying KDE? Consider starring the repo ⭐", cursor="hand2")
+        self.star_label.grid(row=5, column=0, columnspan=2, pady=(0, 5), padx=(0, 10), sticky='e')  # Added padx and sticky='e'
+        self.star_label.bind("<Button-1>", self.open_repo)
+        self.star_label.bind("<Enter>", self.star_on_enter)
+        self.star_label.bind("<Leave>", self.star_on_leave)
+
         self.current_songid = ''
         self.duet_change_ignore_flag = False
         self.previous_language = 0
@@ -666,6 +677,14 @@ class Program:
         if not hasattr(self, 'datatable'):
             messagebox.showerror('Music Order View Error', f'Music Order View: Open datatable first')
             return
+
+        if self.current_songid:
+            try:
+                self.save_song()
+            except Exception as e:
+                messagebox.showerror('Save Song', f'Song Save Error: {e}')
+                traceback.print_exc()
+                return
 
         musicorder_window = tk.Toplevel(self.window)
         musicorder_window.title('Music Order')
@@ -1104,6 +1123,8 @@ class Program:
             self.datatable.set_music_order(song_list)
             for song_id in changed_new_status:
                 self.datatable.toggle_song_new(song_id)
+            if self.current_songid:
+                self.song_info.musicOrder = self.datatable.get_song_music_order(self.current_songid)
             musicorder_window.destroy()
 
         def cancel_changes():
@@ -1251,7 +1272,7 @@ class Program:
             generate_files = messagebox.askyesno("TJA Import", "Do you want to generate fumen and sound files?")
         export_complete = False
         if (generate_files):
-            if not config.config.fumenKey:
+            if not config.config.fumen_key:
                 messagebox.showerror('Fumen Generate', 'Fumen Generation Error: Empty Fumen Key')
                 return
             
@@ -1323,7 +1344,7 @@ class Program:
             config_window.title("Generate Fumen Files")
 
             sound_filepath = tk.StringVar()
-            out_dir_path = tk.StringVar(value=config.config.gameFilesOutDir)
+            out_dir_path = tk.StringVar(value=config.config.game_files_out_dir)
             preview_offset_var = tk.DoubleVar(value=data.demo_start)
             chart_start_offset_var = tk.DoubleVar(value=0.0)
             time_unit_var = tk.StringVar(value="s")  # Default to seconds
@@ -1409,7 +1430,7 @@ class Program:
 
     def on_add_ura(self, *args):
         if not hasattr(self, 'datatable'):
-            messagebox.showerror('Add Ura to Chart', 'No datatable loaded')
+            messagebox.showerror('Add Ura Chart', 'No datatable loaded')
             return
 
         if self.current_songid:
@@ -1424,7 +1445,7 @@ class Program:
         self.new_song_window.attributes('-toolwindow', True)
 
         self.new_song_window.grab_set()
-        self.new_song_window.title(f'Add Ura to Chart')
+        self.new_song_window.title(f'Add Ura Chart')
 
         self.new_song_id_label = tk.Label(self.new_song_window, text="Song Id:", anchor="w", width=20)
         self.new_song_id_label.grid(row=0, column=0)
@@ -1440,10 +1461,10 @@ class Program:
             nonlocal song_id
             new_id_candidate = self.new_song_id_entry.get()
             if not new_id_candidate:
-                messagebox.showerror('Add Ura to Chart', 'Enter a Song Id')
+                messagebox.showerror('Add Ura Chart', 'Enter a Song Id')
                 return
             if not self.datatable.is_song_id_taken(new_id_candidate):
-                messagebox.showerror('Add Ura to Chart', 'Song Id not found')
+                messagebox.showerror('Add Ura Chart', 'Song Id not found')
                 return
             song_id = new_id_candidate
             self.new_song_window.destroy()
@@ -1469,15 +1490,15 @@ class Program:
             return
 
         if data.star[4] == 0:
-            messagebox.showerror('Add Ura to Chart', f'TJA File has no Ura chart')
+            messagebox.showerror('Add Ura Chart', f'TJA File has no Ura chart')
             return
 
-        path_to_x64 = filedialog.askdirectory(initialdir=config.config.gameFilesOutDir, title="Import/Export Directory (x64 directory)")
+        path_to_x64 = filedialog.askdirectory(initialdir=config.config.game_files_out_dir, title="Import/Export Directory (x64 directory)")
 
         try:
             fumen.add_ura_to_song(song_id, tja_path, path_to_x64)
         except Exception as e:
-            messagebox.showerror('Add Ura to Chart', f'Add Ura to Chart Error: {e}')
+            messagebox.showerror('Add Ura Chart', f'Add Ura Chart Error: {e}')
             return
 
         self.song_info = self.datatable.get_song_info(song_id)
@@ -1532,7 +1553,7 @@ class Program:
         new_uid_entry.grid(row=1, column=0)
         new_uid_entry.bind('<Return>', submit)
         new_uid_entry.focus()
-        confirm_button = tk.Button(new_uid_window, text='Update', command=submit)
+        confirm_button = tk.Button(new_uid_window, text='Save', command=submit)
         confirm_button.grid(row=2, column=0)
 
         new_uid_window.wait_window()
@@ -1586,15 +1607,24 @@ class Program:
         except Exception as e:
             messagebox.showerror('Import Error', f'Import Error: {e}')
 
-    def show_about(self):
+    def open_repo(self, *args):
         webbrowser.open('https://github.com/keitannunes/KeifunsDatatableEditor')
 
-    def create_config_window(self, *args):
+    def create_settings_window(self, *args):
         def submit_config():
             datatable_key = entry_datatable_key.get()
             fumen_key = entry_fumen_key.get()
+            try:
+                renda_speed = float(entry_renda_speed.get())
+                if renda_speed != config.config.default_required_renda_speed:
+                    config.config.update_default_required_renda_speed(renda_speed)
+            except ValueError:
+                messagebox.showerror("Settings", f"Invalid renda speed value {entry_renda_speed.get()}")
+                return
 
-            config.config.update_keys(datatable_key, fumen_key)
+            if datatable_key != config.config.datatable_key or fumen_key != config.config.fumen_key:
+                config.config.update_keys(datatable_key, fumen_key)
+
             config_window.destroy()
 
         # Create a new Toplevel window
@@ -1603,24 +1633,29 @@ class Program:
         config_window.title("Enter Configuration")
         config_window.attributes('-toolwindow', True)
 
+        # Create Label and Entry for Required Renda Speed
+        tk.Label(config_window, text="Default Required Renda Speed:").grid(row=0, column=0, padx=10, pady=10)
+        entry_renda_speed = tk.Entry(config_window, width=15)  # Changed width to 15
+        entry_renda_speed.grid(row=0, column=1, padx=10, pady=10, sticky='w')  # Added sticky='w' to left-align
+        entry_renda_speed.insert(0, str(config.config.default_required_renda_speed))
 
         # Create Label and Entry for Datatable Key
-        tk.Label(config_window, text="Datatable Key:").grid(row=0, column=0, padx=10, pady=10)
+        tk.Label(config_window, text="Datatable Key:").grid(row=1, column=0, padx=10, pady=10)
         entry_datatable_key = tk.Entry(config_window, width=70)
         entry_datatable_key.focus()
-        entry_datatable_key.grid(row=0, column=1, padx=10, pady=10)
+        entry_datatable_key.grid(row=1, column=1, padx=10, pady=10)
 
         # Create Label and Entry for Fumen Key
-        tk.Label(config_window, text="Fumen Key:").grid(row=1, column=0, padx=10, pady=10)
+        tk.Label(config_window, text="Fumen Key:").grid(row=2, column=0, padx=10, pady=10)
         entry_fumen_key = tk.Entry(config_window, width=70)
-        entry_fumen_key.grid(row=1, column=1, padx=10, pady=5)
+        entry_fumen_key.grid(row=2, column=1, padx=10, pady=5)
 
-        entry_datatable_key.insert(0, config.config.datatableKey)
-        entry_fumen_key.insert(0, config.config.fumenKey)
+        entry_datatable_key.insert(0, config.config.datatable_key)
+        entry_fumen_key.insert(0, config.config.fumen_key)
 
         # Create Submit Button
         submit_button = tk.Button(config_window, text="Submit", command=submit_config)
-        submit_button.grid(row=2, column=0, columnspan=2, pady=5)
+        submit_button.grid(row=3, column=0, columnspan=2, pady=5)
 
     def save_song(self):
         #Music order will always be up-to-date so we don't have to save that here
@@ -1795,3 +1830,9 @@ class Program:
         self.song_sub_font_var.set(self.song_info.songSubList[self.language_value.get()][1])
         self.song_detail_var.set(self.song_info.songDetailList[self.language_value.get()][0])
         self.song_detail_font_var.set(self.song_info.songDetailList[self.language_value.get()][1])
+
+    def star_on_enter(self, event):
+        self.star_label.configure(fg="blue")
+
+    def star_on_leave(self, event):
+        self.star_label.configure(fg="black")

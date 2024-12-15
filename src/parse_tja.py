@@ -11,6 +11,9 @@ from dataclasses import dataclass, field
 from typing import List, Dict
 from math import ceil, floor
 import typing
+
+from src.config import config
+
 HEADER_GLOBAL = [
     'TITLE',
     'SUBTITLE',
@@ -592,15 +595,26 @@ def parse_and_get_data(tja_file: str) -> SongData:
         # ret.shinuti_score[i] = round(initial * ret.onpu_num[i] + (ret.fuusen_total[i] + estimated_renda) * 100)
 
         ## New shit
-        required_renda_speed = 17 #HARDCODED
-        roll_duration_int = round(ret.renda_time[i]) + round(impoppable_balloon_s)
-        roll_duration = ret.renda_time[i] + impoppable_balloon_s
-        ret.shinuti[i] = ceil((100_000.0 - 10 * (floor(required_renda_speed * roll_duration_int / 1000) + poppable_balloon_count)) / ret.onpu_num[i]) * 10
-        tenjyou = ret.shinuti[i] * ret.onpu_num[i] + 100 * (floor(required_renda_speed * roll_duration / 1000) + poppable_balloon_count)
-        ret.shinuti_score[i] = tenjyou + floor(required_renda_speed * roll_duration) * 100
+        # roll_duration_int = round(ret.renda_time[i]) + round(impoppable_balloon_s)
+        # roll_duration = ret.renda_time[i] + impoppable_balloon_s
+        # ret.shinuti[i] = ceil((100_000.0 - 10 * (floor(required_renda_speed * roll_duration_int / 1000) + poppable_balloon_count)) / ret.onpu_num[i]) * 10
+        # tenjyou = ret.shinuti[i] * ret.onpu_num[i] + 100 * (floor(required_renda_speed * roll_duration / 1000) + poppable_balloon_count)
+        # ret.shinuti_score[i] = tenjyou + floor(required_renda_speed * roll_duration) * 100
+
+        ## Newer shit
+        required_renda_speed = config.default_required_renda_speed
+        ret.shinuti[i], ret.shinuti_score[i] = calculate_shinuti_and_shinuti_score(ret.renda_time[i], impoppable_balloon_s, poppable_balloon_count, ret.onpu_num[i], required_renda_speed)
+
     return ret
 
-# def calculate_shinuti_score()
-    
-if __name__ == '__main__':
-    print(parse_and_get_data('C:\\Users\\knunes\\Downloads\\はいよろこんで.tja'))
+def calculate_shinuti_and_shinuti_score(roll_duration_s: float, impoppable_balloon_s: float, poppable_balloon_count: int, onpu_num: int, required_renda_speed: float, shinuti: int = 0):
+    """
+    Setting shinuti will overwrite shinuti calculation
+    :return: shinuti, shinuti_score
+    """
+    roll_duration_int = round(roll_duration_s) + round(impoppable_balloon_s)
+    roll_duration = roll_duration_s + impoppable_balloon_s
+    if shinuti == 0: shinuti = ceil((100_000.0 - 10 * (floor(required_renda_speed * roll_duration_int / 1000) + poppable_balloon_count)) / onpu_num) * 10
+    tenjyou = shinuti * onpu_num + 100 * (floor(required_renda_speed * roll_duration / 1000) + poppable_balloon_count)
+    shinuti_score = tenjyou + floor(required_renda_speed * roll_duration) * 100
+    return shinuti, shinuti_score
