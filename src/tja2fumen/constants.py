@@ -8,51 +8,50 @@ BRANCH_NAMES = ("normal", "professional", "master")
 # Types of notes that can be found in TJA files
 TJA_NOTE_TYPES = {
     '0': 'Blank',
-    '1': 'Don',                 # ドン
-    'n': 'Don',                 # ドン
-    '#SENOTECHANGE 1': 'Don',   # ドン
-    'd': 'Don2',                # ド
-    '#SENOTECHANGE 2': 'Don2',  # ド
-    'o': 'Don3',                # コ
-    '#SENOTECHANGE 3': 'Don3',  # コ
-    '2': 'Ka',                  # カッ
-    't': 'Ka',                  # カッ
-    '#SENOTECHANGE 4': 'Ka',    # カッ
-    'k': 'Ka2',                 # カ
-    '#SENOTECHANGE 5': 'Ka2',   # カ
-    '3': 'DON',                 # ドン(大)
-    '4': 'KA',                  # カッ(大)
-    '5': 'Drumroll',            # 連打―っ!!
-    '6': 'DRUMROLL',            # 連打(大)―っ!!
-    '7': 'Balloon',             # ふうせん
+    '1': 'Don',
+    '2': 'Ka',
+    '3': 'DON',
+    '4': 'KA',
+    '5': 'Drumroll',
+    '6': 'DRUMROLL',
+    '7': 'Balloon',
     '8': 'EndDRB',
-    '9': 'Kusudama',            # くすだま
-    'A': 'DON2',                # ドン(手)
-    'B': 'KA2',                 # カッ(手)
-    'C': 'Blank',               # bombs
-    'D': 'Drumroll',            # fuse roll
-    'E': 'DON2',                # red + green single hit
-    'F': 'Ka',                  # ADLib (hidden note)
-    'G': 'KA2',                 # red + green double hit
-    'H': 'DRUMROLL',            # double roll
-    'I': 'Drumroll',            # green roll
+    '9': 'Kusudama',
+    'A': 'DON2',      # hands
+    'B': 'KA2',       # hands
+    'C': 'Blank',     # bombs
+    'D': 'Drumroll',  # fuse roll
+    'E': 'DON2',      # red + green single hit
+    'F': 'Ka',        # ADLib (hidden note)
+    'G': 'KA2',       # red + green double hit
+    'H': 'DRUMROLL',  # double roll
+    'I': 'Drumroll',  # green roll
+}
+
+# Conversion for TJAPlayer3's #SENOTECHANGE command
+SENOTECHANGE_TYPES = {
+    1: "Don",   # ドン
+    2: "Don2",  # ド
+    3: "Don3",  # コ
+    4: "Ka",    # カッ
+    5: "Ka2",   # カ
 }
 
 # Types of notes that can be found in fumen files
 FUMEN_NOTE_TYPES = {
-    0x1: "Don",         # ドン
-    0x2: "Don2",        # ド
-    0x3: "Don3",        # コ
-    0x4: "Ka",          # カッ
-    0x5: "Ka2",         # カ
-    0x6: "Drumroll",    # 連打―っ!!
-    0x7: "DON",         # ドン(大)
-    0x8: "KA",          # カッ(大)
-    0x9: "DRUMROLL",    # 連打(大)―っ!!
-    0xa: "Balloon",     # ふうせん
-    0xb: "DON2",        # ドン(手)
-    0xc: "Kusudama",    # くすだま
-    0xd: "KA2",         # カッ(手)
+    0x1: "Don",   # ドン
+    0x2: "Don2",  # ド
+    0x3: "Don3",  # コ
+    0x4: "Ka",    # カッ
+    0x5: "Ka2",   # カ
+    0x6: "Drumroll",
+    0x7: "DON",
+    0x8: "KA",
+    0x9: "DRUMROLL",
+    0xa: "Balloon",
+    0xb: "DON2",        # hands
+    0xc: "Kusudama",
+    0xd: "KA2",         # hands
     0xe: "Unknown1",    # ? (Present in some Wii1 songs)
     0xf: "Unknown2",    # ? (Present in some PS4 songs)
     0x10: "Unknown3",   # ? (Present in some Wii1 songs)
