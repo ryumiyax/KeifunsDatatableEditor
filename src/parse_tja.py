@@ -534,7 +534,7 @@ class SongData:
     renda_time: List[float] = field(default_factory=lambda: [0.0, 0.0, 0.0, 0.0, 0.0])
     fuusen_total: List[int] = field(default_factory=lambda: [0, 0, 0, 0, 0])
 
-def parse_and_get_data(tja_file: str) -> SongData:
+def parse_and_get_data(tja_file: str, shinuti_override: List[int] = None, required_renda_speed_override: List[float] = None) -> SongData:
     """Takes in a tja fname and returns a parse_tja.SongData object"""
     ret = SongData()
     file_str = None  # Initialize file_str to avoid the UnboundLocalError
@@ -602,8 +602,16 @@ def parse_and_get_data(tja_file: str) -> SongData:
         # ret.shinuti_score[i] = tenjyou + floor(required_renda_speed * roll_duration) * 100
 
         ## Newer shit
-        required_renda_speed = config.default_required_renda_speed
-        ret.shinuti[i], ret.shinuti_score[i] = calculate_shinuti_and_shinuti_score(ret.renda_time[i], impoppable_balloon_s, poppable_balloon_count, ret.onpu_num[i], required_renda_speed)
+        if required_renda_speed_override is not None and required_renda_speed_override[i] != 0:
+            required_renda_speed = required_renda_speed_override[i]
+        else:
+            required_renda_speed = config.default_required_renda_speed
+
+        if shinuti_override is not None and shinuti_override[i] != 0:
+            shinuti = shinuti_override[i]
+        else:
+            shinuti = 0
+        ret.shinuti[i], ret.shinuti_score[i] = calculate_shinuti_and_shinuti_score(ret.renda_time[i], impoppable_balloon_s, poppable_balloon_count, ret.onpu_num[i], required_renda_speed, shinuti=shinuti)
 
     return ret
 

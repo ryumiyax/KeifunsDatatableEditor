@@ -166,6 +166,10 @@ class Program:
         #Edit Menu
 
         self.edit_menu = tk.Menu(self.menu_bar, tearoff=0)
+        self.edit_menu.add_command(label="Recalculate Shinuchi Score", accelerator="Ctrl+R", command=self.recalculate_shinuchi_score)
+        self.edit_menu.add_command(label="Recalculate All", accelerator="Ctrl+Shift+R",
+                                   command=self.recalculate_all)
+        self.edit_menu.add_separator()
         self.edit_menu.add_command(label="Add Ura Chart", accelerator="Ctrl+U", command=self.on_add_ura)
         self.menu_bar.add_cascade(label="Edit", menu=self.edit_menu)
 
@@ -194,6 +198,8 @@ class Program:
         self.window.bind("<Control-u>", self.on_add_ura)  # type: ignore
         self.window.bind("<Control-f>", self.search_view)
         self.window.bind("<Control-m>", self.music_order_view)
+        self.window.bind("<Control-r>", self.recalculate_shinuchi_score)
+        self.window.bind("<Control-Shift-KeyPress-R>", self.recalculate_all)
 
         self.songid_label = tk.Label(self.window, text="Song Id:")
         self.songid_label.grid(row=0, column=0)
@@ -485,6 +491,7 @@ class Program:
         self.music_order_window = tk.Toplevel(self.window)
         self.music_order_window.attributes('-toolwindow', True)
         self.music_order_window.grab_set()
+        self.music_order_window.focus_set()
         self.music_order_window.title(f'Music Order - {self.current_songid}')
 
         self.music_order_genre_order_labels = []
@@ -588,7 +595,8 @@ class Program:
         search_window = tk.Toplevel(self.window)
         search_window.title('Search')
         search_window.resizable(False, False)
-        langvar = tk.IntVar()
+        search_window.focus_set()
+        langvar = tk.IntVar(value=self.language_value.get())
         song_list = self.datatable.get_song_list(main_genre_only=True)
 
         search_var = tk.StringVar()
@@ -614,6 +622,7 @@ class Program:
         search_var.trace_add("write", perform_search)  # Bind the search function to changes in the entry
         search_bar = ttk.Entry(search_frame, textvariable=search_var, width=30)
         search_bar.grid(row=0, column=1, padx=10, pady=10)
+        search_bar.focus()
 
         search_frame.grid(row=0, column=0)
 
@@ -683,13 +692,13 @@ class Program:
                 self.save_song()
             except Exception as e:
                 messagebox.showerror('Save Song', f'Song Save Error: {e}')
-                traceback.print_exc()
                 return
 
         musicorder_window = tk.Toplevel(self.window)
         musicorder_window.title('Music Order')
         musicorder_window.resizable(False, False)
-        langvar = tk.IntVar()
+        musicorder_window.focus_set()
+        langvar = tk.IntVar(value=self.language_value.get())
         song_list = self.datatable.get_song_list(main_genre_only=False)
 
         # search_var = tk.StringVar()
@@ -892,6 +901,7 @@ class Program:
             popup.title("New Song")
             popup.attributes('-toolwindow', True)
             popup.grab_set()
+            popup.focus_set()
 
             # Create and layout widgets
             song_id_label = tk.Label(popup, text="Song Id:", anchor="w", width=20)
@@ -1152,13 +1162,13 @@ class Program:
                 self.save_song()
             except Exception as e:
                 messagebox.showerror('Save Song', f'Song Save Error: {e}')
-                traceback.print_exc()
                 return
 
         self.new_song_window = tk.Toplevel(self.window, pady=10, padx=10)
         self.new_song_window.attributes('-toolwindow', True)
 
         self.new_song_window.grab_set()
+        self.new_song_window.focus_set()
         self.new_song_window.title(f'New Song')
 
         self.new_song_id_label = tk.Label(self.new_song_window, text="Song Id:", anchor="w", width=20)
@@ -1214,13 +1224,14 @@ class Program:
                 self.save_song()
             except Exception as e:
                 messagebox.showerror('Save Song', f'Song Save Error: {e}')
-                traceback.print_exc()
                 return
         
         self.new_song_window = tk.Toplevel(self.window, pady=10, padx=10)
         self.new_song_window.attributes('-toolwindow', True)
 
         self.new_song_window.grab_set()
+        self.new_song_window.focus_set()
+
         self.new_song_window.title(f'New Song')
 
         self.new_song_id_label = tk.Label(self.new_song_window, text="Song Id:", anchor="w", width=20)
@@ -1263,7 +1274,6 @@ class Program:
             data = parse_tja.parse_and_get_data(tja_path)
         except Exception as e:
             messagebox.showerror('TJA Import', f'TJA Import Error: {e}')
-            traceback.print_exc()
             return
         
         if use_without_datatable: 
@@ -1334,12 +1344,12 @@ class Program:
                     messagebox.showinfo('Fumen Generate', 'Successfully generated files')
                 except Exception as e:
                     messagebox.showerror('Fumen Generate', f'Fumen Generation Error: {e}')
-                    traceback.print_exc()
 
 
             # Create a new Toplevel window
             config_window = tk.Toplevel()
             config_window.grab_set()
+            config_window.focus_set()
             config_window.attributes('-toolwindow', True)
             config_window.title("Generate Fumen Files")
 
@@ -1438,13 +1448,14 @@ class Program:
                 self.save_song()
             except Exception as e:
                 messagebox.showerror('Save Song', f'Song Save Error: {e}')
-                traceback.print_exc()
                 return
 
         self.new_song_window = tk.Toplevel(self.window, pady=10, padx=10)
         self.new_song_window.attributes('-toolwindow', True)
 
         self.new_song_window.grab_set()
+        self.new_song_window.focus_set()
+
         self.new_song_window.title(f'Add Ura Chart')
 
         self.new_song_id_label = tk.Label(self.new_song_window, text="Song Id:", anchor="w", width=20)
@@ -1486,7 +1497,6 @@ class Program:
             data = parse_tja.parse_and_get_data(tja_path)
         except Exception as e:
             messagebox.showerror('TJA Import', f'TJA Import Error: {e}')
-            traceback.print_exc()
             return
 
         if data.star[4] == 0:
@@ -1499,6 +1509,7 @@ class Program:
             fumen.add_ura_to_song(song_id, tja_path, path_to_x64)
         except Exception as e:
             messagebox.showerror('Add Ura Chart', f'Add Ura Chart Error: {e}')
+            traceback.print_exc()
             return
 
         self.song_info = self.datatable.get_song_info(song_id)
@@ -1545,6 +1556,8 @@ class Program:
         new_uid_window.attributes('-toolwindow', True)
 
         new_uid_window.grab_set()
+        new_uid_window.focus_set()
+
         new_uid_window.title(f'Update uniqueId {uniqueId}')
         prompt = tk.Label(new_uid_window, text = 'Enter a new UniqueId for the song to overwrite the existing one')
         prompt.grid(row=0, column=0)
@@ -1571,7 +1584,6 @@ class Program:
                 self.save_song()
             except Exception as e:
                 messagebox.showerror('Save Song', f'Song Save Error: {e}')
-                traceback.print_exc()
                 return
         selected_directory = filedialog.askdirectory(title="Select an export directory")
         if not selected_directory:
@@ -1590,7 +1602,6 @@ class Program:
                 self.save_song()
             except Exception as e:
                 messagebox.showerror('Save Song', f'Song Save Error: {e}')
-                traceback.print_exc()
                 return
         selected_directory = filedialog.askdirectory(title="Select an import directory")
         if not selected_directory:
@@ -1630,7 +1641,8 @@ class Program:
         # Create a new Toplevel window
         config_window = tk.Toplevel()
         config_window.grab_set()
-        config_window.title("Enter Configuration")
+        config_window.focus_set()
+        config_window.title("Enter Settings")
         config_window.attributes('-toolwindow', True)
 
         # Create Label and Entry for Required Renda Speed
@@ -1729,7 +1741,6 @@ class Program:
                 self.save_song()
             except Exception as e:
                 messagebox.showerror('Song Save Error', f'Song Save Error: {e}')
-                traceback.print_exc()
                 self.current_songid = old_songid
                 self.songid_entry.delete(0, tk.END)
                 self.songid_entry.insert(0, old_songid)
@@ -1741,7 +1752,6 @@ class Program:
                 #self.enable_all_widgets(self.window)
         except Exception as e:
             messagebox.showerror('Song Load Error', f'Song Load Error: {e}')
-            traceback.print_exc()
             self.current_songid = old_songid
             self.songid_entry.delete(0, tk.END)
             self.songid_entry.insert(0, old_songid)
@@ -1830,6 +1840,211 @@ class Program:
         self.song_sub_font_var.set(self.song_info.songSubList[self.language_value.get()][1])
         self.song_detail_var.set(self.song_info.songDetailList[self.language_value.get()][0])
         self.song_detail_font_var.set(self.song_info.songDetailList[self.language_value.get()][1])
+
+    def recalculate_shinuchi_score(self, *args):
+        if not self.current_songid: return
+
+        # Create a new Toplevel window
+        window = tk.Toplevel()
+        window.grab_set()
+        window.focus_set()
+        window.title("Recalculate Shinuchi Score")
+        window.attributes('-toolwindow', True)
+        window.resizable(False, False)
+
+
+        # Main frame
+        main_frame = ttk.Frame(window, padding="10")
+        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+
+        # Difficulty levels
+        difficulties = ["Easy", "Normal", "Hard", "Oni", "Ura"]
+
+        # Variables to store values
+        enabled_vars = []
+        renda_vars = []
+        shinuti_vars = []
+
+        # Create columns for each difficulty
+        for col, diff in enumerate(difficulties):
+            # Create LabelFrame for each difficulty
+            frame = ttk.LabelFrame(main_frame, text=diff, padding="5")
+            frame.grid(row=0, column=col, padx=5, pady=5, sticky=(tk.W, tk.E, tk.N, tk.S))
+
+            # Enable/Disable checkbox
+            enabled_vars.append(tk.BooleanVar(value=self.star_values[col].get() != 0))
+            check = ttk.Checkbutton(frame, text="Enable", variable=enabled_vars[col])
+            check.grid(row=0, column=0, padx=5, pady=2, sticky=tk.W)
+
+            # Required Renda Speed entry
+            ttk.Label(frame, text="Required Renda Speed:").grid(row=1, column=0, padx=5, pady=2, sticky=tk.W)
+            renda_vars.append(tk.StringVar(value=str(config.config.default_required_renda_speed)))
+            renda_entry = ttk.Entry(frame, width=10, textvariable=renda_vars[col])
+            renda_entry.grid(row=2, column=0, padx=5, pady=2)
+
+            # Shinuti entry
+            ttk.Label(frame, text="Shinuchi:").grid(row=3, column=0, padx=5, pady=2, sticky=tk.W)
+            shinuti_vars.append(tk.StringVar(value="0"))
+            shinuti_entry = ttk.Entry(frame, width=10, textvariable=shinuti_vars[col])
+            shinuti_entry.grid(row=4, column=0, padx=5, pady=2)
+
+        # Hint label
+        hint_label = ttk.Label(main_frame,
+                               text="Hint: leave the shinuchi field as 0 to recalculate shinuchi along with shinuchi score")
+        hint_label.grid(row=1, column=0, columnspan=5, pady=(2, 0), sticky=tk.W)
+
+        def handle_recalculate():
+            for i in range(5):
+                if not enabled_vars[i].get(): continue
+                try:
+                    required_renda_speed = float(renda_vars[i].get())
+                except ValueError:
+                    messagebox.showerror("Recalculate Shinuchi Score", f"Renda speed {renda_vars[i].get()} is not valid")
+                    return
+                try:
+                    shinuti = int(shinuti_vars[i].get())
+                except ValueError:
+                    messagebox.showerror("Recalculate Shinuchi Score",
+                                         f"Shinuchi {shinuti_vars[i].get()} is not valid")
+                    return
+
+                recalculated_shinuti, recalculated_shinuti_score = parse_tja.calculate_shinuti_and_shinuti_score(
+                    roll_duration_s=self.song_info.renda_time[i],
+                    impoppable_balloon_s=0, #This function assumes its 0, if it's not zero use the re-calculate everything feature
+                    poppable_balloon_count=self.song_info.fuusen_total[i],
+                    onpu_num=self.song_info.onpu_num[i],
+                    required_renda_speed=required_renda_speed,
+                    shinuti=shinuti
+                )
+                self.shinuchi_values[i].set(recalculated_shinuti)
+                self.shinuchi_score_values[i].set(recalculated_shinuti_score)
+            window.destroy()
+
+        def handle_cancel():
+            window.destroy()
+
+        # Button frame with right justification
+        button_frame = ttk.Frame(main_frame)
+        button_frame.grid(row=2, column=0, columnspan=5, pady=(5, 5), sticky=tk.E)
+
+        # Recalculate and Cancel buttons
+        ttk.Button(button_frame, text="Recalculate", command=handle_recalculate).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(button_frame, text="Cancel", command=handle_cancel).pack(side=tk.LEFT)
+
+    def recalculate_all(self, *args):
+        if not self.current_songid: return
+
+        # Create a new Toplevel window
+        window = tk.Toplevel()
+        window.grab_set()
+        window.focus_set()
+        window.title("Recalculate All")
+        window.attributes('-toolwindow', True)
+        window.resizable(False, False)
+
+
+        # Main frame
+        main_frame = ttk.Frame(window, padding="10")
+        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+
+        # File selection frame
+        file_frame = ttk.Frame(main_frame)
+        file_frame.grid(row=0, column=0, columnspan=5, pady=(0, 10), sticky=(tk.W, tk.E))
+
+        ttk.Label(file_frame, text="Tja File:").pack(side=tk.LEFT)
+        file_path_var = tk.StringVar()
+        file_entry = ttk.Entry(file_frame, textvariable=file_path_var, state="readonly", width=50)
+        file_entry.pack(side=tk.LEFT, padx=(5, 5), fill=tk.X, expand=True)
+
+        def select_file():
+            filename = filedialog.askopenfilename(
+                title="Select TJA file",
+                filetypes=[("TJA files", "*.tja"), ("All files", "*.*")]
+            )
+            if filename:
+                file_path_var.set(filename)
+
+        browse_button = ttk.Button(file_frame, text="Browse...", command=select_file)
+        browse_button.pack(side=tk.LEFT)
+
+        # Difficulty levels
+        difficulties = ["Easy", "Normal", "Hard", "Oni", "Ura"]
+
+        # Variables to store values
+        enabled_vars = []
+        renda_vars = []
+        shinuti_vars = []
+
+        # Create columns for each difficulty
+        for col, diff in enumerate(difficulties):
+            # Create LabelFrame for each difficulty
+            frame = ttk.LabelFrame(main_frame, text=diff, padding="5")
+            frame.grid(row=1, column=col, padx=5, pady=5, sticky=(tk.W, tk.E, tk.N, tk.S))
+
+            # Enable/Disable checkbox
+            enabled_vars.append(tk.BooleanVar(value=self.star_values[col].get() != 0))
+            check = ttk.Checkbutton(frame, text="Enable", variable=enabled_vars[col])
+            check.grid(row=0, column=0, padx=5, pady=2, sticky=tk.W)
+
+            # Required Renda Speed entry
+            ttk.Label(frame, text="Required Renda Speed:").grid(row=1, column=0, padx=5, pady=2, sticky=tk.W)
+            renda_vars.append(tk.StringVar(value=str(config.config.default_required_renda_speed)))
+            renda_entry = ttk.Entry(frame, width=10, textvariable=renda_vars[col])
+            renda_entry.grid(row=2, column=0, padx=5, pady=2)
+
+            # Shinuti entry
+            ttk.Label(frame, text="Shinuchi:").grid(row=3, column=0, padx=5, pady=2, sticky=tk.W)
+            shinuti_vars.append(tk.StringVar(value="0"))
+            shinuti_entry = ttk.Entry(frame, width=10, textvariable=shinuti_vars[col])
+            shinuti_entry.grid(row=4, column=0, padx=5, pady=2)
+
+        # Hint label
+        hint_label = ttk.Label(main_frame,
+                               text="Hint: leave the shinuchi field as 0 to recalculate shinuchi along with shinuchi score")
+        hint_label.grid(row=2, column=0, columnspan=5, pady=(2, 0), sticky=tk.W)
+
+
+        def handle_recalculate():
+            required_renda_speeds = []
+            shinuti_values = []
+            for i in range(5):
+                try:
+                    required_renda_speeds.append(float(renda_vars[i].get()))
+                except ValueError:
+                    messagebox.showerror("Recalculate Shinuchi Score", f"Renda speed {renda_vars[i].get()} is not valid")
+                    return
+                try:
+                    shinuti_values.append(int(shinuti_vars[i].get()))
+                except ValueError:
+                    messagebox.showerror("Recalculate Shinuchi Score",
+                                         f"Shinuchi {shinuti_vars[i].get()} is not valid")
+                    return
+
+            try:
+                parsed_data = parse_tja.parse_and_get_data(file_path_var.get(), shinuti_values, required_renda_speeds)
+            except Exception as e:
+                messagebox.showerror("Recalculate All", f"Parse TJA Error: {e}")
+                return
+
+            for i in range(5):
+                if not enabled_vars[i].get(): continue
+                self.shinuchi_values[i].set(parsed_data.shinuti[i])
+                self.shinuchi_score_values[i].set(parsed_data.shinuti_score[i])
+                self.onpu_num_values[i].set(parsed_data.onpu_num[i])
+                self.renda_time_values[i].set(str(parsed_data.renda_time[i]))
+                self.fuusen_total_values[i].set(parsed_data.fuusen_total[i])
+            window.destroy()
+
+        def handle_cancel():
+            window.destroy()
+
+        # Button frame with right justification
+        button_frame = ttk.Frame(main_frame)
+        button_frame.grid(row=2, column=0, columnspan=5, pady=(5, 5), sticky=tk.E)
+
+        # Recalculate and Cancel buttons
+        ttk.Button(button_frame, text="Recalculate", command=handle_recalculate).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(button_frame, text="Cancel", command=handle_cancel).pack(side=tk.LEFT)
 
     def star_on_enter(self, event):
         self.star_label.configure(fg="blue")
