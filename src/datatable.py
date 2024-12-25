@@ -213,11 +213,12 @@ class SongListItem:
 class Datatable:
     """Datatable class"""
     filepath: str
-    indices: Dict[str, DatatableIndices]
     uid_musicinfo_index_mapping: Dict[int, int]
+    wordlist_indices: Dict[str, Tuple[int, int, int]]
     musicinfo_indices: Dict[str, int]
     music_attribute_indices: Dict[str, int]
-    wordlist_indices: Dict[str, Tuple[int, int, int]]
+    music_ai_section_indices: Dict[str, int]
+    music_usbsetting_indices: Dict[str, int]
     wordlist: List[WordlistItem]
     musicinfo: List[MusicinfoItem]
     music_attribute: List[MusicAttributeItem]
@@ -255,15 +256,27 @@ class Datatable:
         self.parse_music_AI_section()
         self.parse_music_usbsetting()
 
-    def create_default_item(self, field_name: str, song_id: str, unique_id: int):
+    def create_and_append_default_item(self, field_name: str, song_id: str, unique_id: int) -> int:
         if field_name == 'musicinfo':
-            return MusicinfoItem(id=song_id, uniqueId=unique_id)
+            self.musicinfo.append(MusicinfoItem(id=song_id, uniqueId=unique_id))
+            idx = len(self.musicinfo) - 1
+            self.musicinfo_indices[song_id] = idx
+            return idx
         elif field_name == 'music_attribute':
-            return MusicAttributeItem(id=song_id, uniqueId=unique_id)
+            self.music_attribute.append(MusicAttributeItem(id=song_id, uniqueId=unique_id))
+            idx = len(self.music_attribute) - 1
+            self.music_attribute_indices[song_id] = idx
+            return idx
         elif field_name == 'music_ai_section':
-            return MusicAISectionItem(id=song_id, uniqueId=unique_id)
+            self.music_ai_section.append(MusicAISectionItem(id=song_id, uniqueId=unique_id))
+            idx = len(self.music_ai_section) - 1
+            self.music_ai_section_indices[song_id] = idx
+            return idx
         elif field_name == 'music_usbsetting':
-            return MusicUsbsettingItem(id=song_id, uniqueId=unique_id)
+            self.music_usbsetting.append(MusicUsbsettingItem(id=song_id, uniqueId=unique_id))
+            idx = len(self.music_usbsetting) - 1
+            self.music_usbsetting_indices[song_id] = idx
+            return idx
         else:
             raise ValueError(f"Unknown field name: {field_name}")
 
@@ -307,62 +320,56 @@ class Datatable:
             return -1
         return self.music_attribute_indices[id]
 
+    def get_music_ai_section_index(self, id: str):
+        if id not in self.music_ai_section_indices:
+            return -1
+        return self.music_ai_section_indices[id]
+
+    def get_music_usbsetting_index(self, id: str):
+        if id not in self.music_usbsetting_indices:
+            return -1
+        return self.music_usbsetting_indices[id]
+
     def get_indices(self, id: str) -> DatatableIndices:
-        indices: DatatableIndices
-        if id in self.indices:
-            indices = self.indices[id]
-        else:
-            """Loop over datatable objects to find indices"""
-            musicinfo_index = self.get_musicinfo_index(id)
+        musicinfo_index = self.get_musicinfo_index(id)
 
-            wordlist_name_index, wordlist_sub_index, wordlist_detail_index = self.get_wordlist_indices(id)
+        wordlist_name_index, wordlist_sub_index, wordlist_detail_index = self.get_wordlist_indices(id)
 
-            music_attribute_index = self.get_music_attribute_index(id)
+        music_attribute_index = self.get_music_attribute_index(id)
 
-            music_ai_section_index = -1
-            for i, e in enumerate(self.music_ai_section):
-                if e.id == id:
-                    music_ai_section_index = i
-                    break
+        music_ai_section_index = self.get_music_ai_section_index(id)
 
-            music_usbsetting_index = -1
-            for i, e in enumerate(self.music_usbsetting):
-                if e.id == id:
-                    music_usbsetting_index = i
-                    break
+        music_usbsetting_index = self.get_music_usbsetting_index(id)
 
-            indices = DatatableIndices(
-                wordlist_name_index,
-                wordlist_sub_index,
-                wordlist_detail_index,
-                musicinfo_index,
-                music_attribute_index,
-                music_ai_section_index,
-                music_usbsetting_index
-            )
+        indices = DatatableIndices(
+            wordlist_name_index,
+            wordlist_sub_index,
+            wordlist_detail_index,
+            musicinfo_index,
+            music_attribute_index,
+            music_ai_section_index,
+            music_usbsetting_index
+        )
 
-            for field in fields(indices):
-                if getattr(indices, field.name) == -1:
-                    if field.name.startswith('wordlist'):
-                        new_index = len(self.wordlist)
-                        parts = field.name.split('_')
-                        if parts[1] == "detail":
-                            key = f"song_detail_{id}"
-                            self.wordlist_indices[id] = (self.wordlist_indices[id][0], self.wordlist_indices[id][1], new_index)
-                        elif parts[1] == "sub":
-                            key = f"song_sub_{id}"
-                            self.wordlist_indices[id] = (self.wordlist_indices[id][0], new_index, self.wordlist_indices[id][2])
-                        else:
-                            key = f"song_{id}"
-                            self.wordlist_indices[id] = (new_index, self.wordlist_indices[id][1], self.wordlist_indices[id][2])
-                        self.wordlist.append(WordlistItem(key=key))
+        for field in fields(indices):
+            if getattr(indices, field.name) == -1:
+                if field.name.startswith('wordlist'):
+                    new_index = len(self.wordlist)
+                    parts = field.name.split('_')
+                    if parts[1] == "detail":
+                        key = f"song_detail_{id}"
+                        self.wordlist_indices[id] = (self.wordlist_indices[id][0], self.wordlist_indices[id][1], new_index)
+                    elif parts[1] == "sub":
+                        key = f"song_sub_{id}"
+                        self.wordlist_indices[id] = (self.wordlist_indices[id][0], new_index, self.wordlist_indices[id][2])
                     else:
-                        new_index = len(getattr(self, field.name))
-                        self.set_index(field.name, id)
-                        getattr(self, field.name).append(self.create_default_item(field.name, id, self.musicinfo[musicinfo_index].uniqueId))
-                    setattr(indices, field.name, new_index)
+                        key = f"song_{id}"
+                        self.wordlist_indices[id] = (new_index, self.wordlist_indices[id][1], self.wordlist_indices[id][2])
+                    self.wordlist.append(WordlistItem(key=key))
+                else:
+                    new_index = self.create_and_append_default_item(field.name, id, self.musicinfo[musicinfo_index].uniqueId)
+                setattr(indices, field.name, new_index)
 
-            self.indices[id] = indices
         return indices
 
     def is_song_new(self, id):
@@ -688,69 +695,69 @@ class Datatable:
     def delete_song(self, id: str):
         deleted_indices = self.get_indices(id)
 
-        # Create a list of (index, attribute) tuples for wordlist items
-        wordlist_indices = [
-            (deleted_indices.wordlist_name, 'wordlist_name'),
-            (deleted_indices.wordlist_sub, 'wordlist_sub'),
-            (deleted_indices.wordlist_detail, 'wordlist_detail')
-        ]
-        wordlist_indices_copy = wordlist_indices[:]
-        # Sort by index in descending order
-        wordlist_indices.sort(key=lambda x: x[0], reverse=True)
-
-        # Delete wordlist items
-        for index, attr in wordlist_indices:
-            del self.wordlist[index]
-            # Update indices for remaining deletions
-            for i, (idx, a) in enumerate(wordlist_indices):
-                if idx > index:
-                    wordlist_indices[i] = (idx - 1, a)
-
-            # Update the original indices
-            setattr(deleted_indices, attr, index)
-
-        # Delete other items
-        del self.wordlist_indices[id]
+        ## Musicinfo
         del self.musicinfo[deleted_indices.musicinfo]
         del self.musicinfo_indices[id]
-        del self.music_attribute[deleted_indices.music_attribute]
-        del self.music_ai_section[deleted_indices.music_ai_section]
-        del self.music_usbsetting[deleted_indices.music_usbsetting]
 
-        # Update indices for all songs
-        for song_id, song_indices in self.indices.items():
-            if song_id != id:  # Skip the deleted song
-                # Update wordlist indices
-                for deleted_index, _ in wordlist_indices_copy:
-                    for current_song_index, attr in zip(
-                            [song_indices.wordlist_name, song_indices.wordlist_sub, song_indices.wordlist_detail],
-                            ["wordlist_name", "wordlist_sub", "wordlist_detail"]):
-                        if current_song_index > deleted_index:
-                            setattr(song_indices, attr, current_song_index - 1)
-                    for k, v in self.wordlist_indices:
-                        if any(x > deleted_index for x in v):
-                            self.wordlist_indices[k] = tuple([x - 1 if x > deleted_index else x for x in v])
-
-                # Update other indices
-                if song_indices.musicinfo > deleted_indices.musicinfo:
-                    song_indices.musicinfo -= 1
-                if song_indices.music_attribute > deleted_indices.music_attribute:
-                    song_indices.music_attribute -= 1
-                if song_indices.music_ai_section > deleted_indices.music_ai_section:
-                    song_indices.music_ai_section -= 1
-                if song_indices.music_usbsetting > deleted_indices.music_usbsetting:
-                    song_indices.music_usbsetting -= 1
-
-        for k, v in self.musicinfo_indices:
+        for k, v in self.musicinfo_indices.items():
             if v > deleted_indices.musicinfo:
                 self.musicinfo_indices[k] -= 1
 
-        for k, v in self.music_attribute_indices:
+        ## Music Attribute
+        del self.music_attribute[deleted_indices.music_attribute]
+        del self.music_attribute_indices[id]
+
+        for k, v in self.music_attribute_indices.items():
             if v > deleted_indices.music_attribute:
                 self.music_attribute_indices[k] -= 1
 
-        # Remove the deleted song's indices from the dictionary
-        del self.indices[id]
+        ## Music AI Section
+        del self.music_ai_section[deleted_indices.music_ai_section]
+        del self.music_ai_section_indices[id]
+
+        for k, v in self.music_ai_section_indices.items():
+            if v > deleted_indices.music_ai_section:
+                self.music_ai_section_indices[k] -= 1
+
+        ## Music USB Setting
+        del self.music_usbsetting[deleted_indices.music_usbsetting]
+        del self.music_usbsetting_indices[id]
+
+        for k, v in self.music_usbsetting_indices.items():
+            if v > deleted_indices.music_usbsetting:
+                self.music_usbsetting_indices[k] -= 1
+
+        ## Wordlist
+        # Get all indices to delete first
+        indices_to_delete = []
+
+        # Find all instances of this songid in wordlist
+        for i, item in enumerate(self.wordlist):
+            if item.key in [f"song_{id}", f"song_sub_{id}", f"song_detail_{id}"]:
+                indices_to_delete.append(i)
+
+        # Sort in reverse order so we can delete without affecting other indices
+        indices_to_delete.sort(reverse=True)
+
+        # Delete from wordlist
+        for index in indices_to_delete:
+            del self.wordlist[index]
+
+        # Delete this song's entry from wordlist_indices
+        if id in self.wordlist_indices:
+            del self.wordlist_indices[id]
+
+        # Update all subsequent indices in wordlist_indices
+        for other_songid, (song_idx, sub_idx, detail_idx) in self.wordlist_indices.items():
+            updated_indices = []
+
+            # For each index in the tuple, decrease it by the count of deleted items that came before it
+            for idx in [song_idx, sub_idx, detail_idx]:
+                reduction = sum(1 for del_idx in indices_to_delete if del_idx < idx)
+                updated_indices.append(idx - reduction)
+
+            self.wordlist_indices[other_songid] = tuple(updated_indices)
+
 
         # Update uid_musicinfo_index_mapping
         updated_mapping = {}
@@ -901,7 +908,10 @@ class Datatable:
         defaults = MusicAISectionItem().__dict__
 
         self.music_ai_section = []
+        self.music_ai_section_indices = dict()
+
         # Convert the list of dictionaries to a list of Item objects
+        i = 0
         for item in data_dict['items']:
             try:
                 # Use dictionary unpacking with defaults
@@ -910,6 +920,8 @@ class Datatable:
                 # Create the WordlistItem using the merged dictionary
                 music_ai_section_item = MusicAISectionItem(**full_item)
                 self.music_ai_section.append(music_ai_section_item)
+                self.music_ai_section_indices[music_ai_section_item.id] = i
+                i += 1
             except TypeError as e:
                 print(f"Failed to create MusicAISectionItem from {item['id']}: {e}")
 
@@ -920,7 +932,10 @@ class Datatable:
         defaults = MusicUsbsettingItem().__dict__
 
         self.music_usbsetting = []
+        self.music_usbsetting_indices = dict()
+
         # Convert the list of dictionaries to a list of Item objects
+        i = 0
         for item in data_dict['items']:
             try:
                 # Use dictionary unpacking with defaults
@@ -929,6 +944,8 @@ class Datatable:
                 # Create the WordlistItem using the merged dictionary
                 music_usbsetting_item = MusicUsbsettingItem(**full_item)
                 self.music_usbsetting.append(music_usbsetting_item)
+                self.music_usbsetting_indices[music_usbsetting_item.id] = i
+                i += 1
             except TypeError as e:
                 print(f"Failed to create MusicUsbsettingItem from {item['id']}: {e}")
 

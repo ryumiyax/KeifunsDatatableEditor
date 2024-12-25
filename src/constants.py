@@ -1,4 +1,3 @@
-from enum import Enum
 
 GENRE_MAPPING = {
     "0. POP": 0,
@@ -33,9 +32,12 @@ GENRE_COLOURS = {
     7: '#ded523'
 }
 
-class Language(Enum):
-    JPN = 0
-    ENG = 1
-    zh_TW = 2
-    KOR = 3
-    zh_CN = 4
+LANGUAGES = ('JPN', 'ENG', 'zh-tw', 'KOR', 'zh-cn')
+
+DIFFICULTIES = {
+    0: 'Easy',
+    1: 'Normal',
+    2: 'Hard',
+    3: 'Oni',
+    4: 'Ura'
+}

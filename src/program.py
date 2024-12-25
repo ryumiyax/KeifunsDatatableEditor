@@ -19,6 +19,7 @@ import traceback
 import shutil
 import webbrowser
 
+
 class Program:
     window: tk.Tk
     frame: tk.Frame
@@ -27,14 +28,14 @@ class Program:
     file_menu: tk.Menu
     help_menu: tk.Menu
 
-    #Frames
+    # Frames
     song_details_frame: tk.LabelFrame
     language_frame: tk.Frame
     difficulty_info_label_frame: tk.LabelFrame
     difficulty_info_frame: tk.Frame
     difficulty_info_sub_frames: List[tk.LabelFrame]
 
-    #Labels
+    # Labels
     songid_label: tk.Label
     song_name_label: tk.Label
     song_sub_label: tk.Label
@@ -51,8 +52,7 @@ class Program:
     fuusen_total_labels: List[tk.Label]
     ai_sections_labels: List[tk.Label]
 
-
-    #Entries
+    # Entries
     songid_entry: tk.Entry
     song_name_entry: tk.Entry
     song_sub_entry: tk.Entry
@@ -70,11 +70,11 @@ class Program:
     genre_var: tk.StringVar
     dancer_var: tk.StringVar
 
-    #Combobox
+    # Combobox
     genre_combobox: ttk.Combobox
-    #ai_sections_comboboxes: List[ttk.Combobox]
+    # ai_sections_comboboxes: List[ttk.Combobox]
 
-    #Spinbox
+    # Spinbox
     unique_id_spinbox: tk.Spinbox
     star_spinboxes: List[tk.Spinbox]
     star_values: List[tk.IntVar]
@@ -87,7 +87,7 @@ class Program:
     fuusen_total_spinboxes: List[tk.Spinbox]
     fuusen_total_values: List[tk.IntVar]
 
-    #Checkbutton
+    # Checkbutton
     decouple_duet_checkbutton: tk.Checkbutton
     decouple_duet_var: tk.BooleanVar
     new_checkbutton: tk.Checkbutton
@@ -98,12 +98,12 @@ class Program:
     spike_on_spinboxes: List[tk.Spinbox]
     spike_on_values: List[tk.IntVar]
     ai_hard_checkbuttons: List[tk.Checkbutton]
-    ai_hard_values: List[tk.BooleanVar] 
+    ai_hard_values: List[tk.BooleanVar]
 
-    #Button
+    # Button
     music_order_button: tk.Button
 
-    #Radio Buttons
+    # Radio Buttons
     language_value: tk.IntVar
     language_radiobuttons: List[tk.Radiobutton]
     ai_sections_frames: List[tk.Frame]
@@ -116,7 +116,7 @@ class Program:
     music_order_genre_order_labels: List[tk.Label]
     music_order_genre_frame: List[tk.Frame]
     music_order_genre_display_checkbuttons: List[tk.Checkbutton]
-    music_order_genre_display_var:  List[tk.BooleanVar]
+    music_order_genre_display_var: List[tk.BooleanVar]
     music_order_genre_order_spinboxes: List[tk.Spinbox]
     music_order_genre_order_var: List[tk.IntVar]
     music_order_submit_button: tk.Button
@@ -128,73 +128,74 @@ class Program:
     new_song_id_entry: tk.Entry
     new_song_confirm: tk.Button
 
-    #Other Variables
+    # Other Variables
     current_songid: str
     previous_language: int
     datatable: dt.Datatable
     song_info: dt.Song
-    initial: bool #I'm genuinely convinced this variable is never used, scared and lazy to check
-    duet_change_ignore_flag: bool #I absolutely fucking hate this variable; Theres definitely a better solution that my retarded ass cannot think of
+    initial: bool  # I'm genuinely convinced this variable is never used, scared and lazy to check
+    duet_change_ignore_flag: bool  # I absolutely fucking hate this variable; Theres definitely a better solution that my retarded ass cannot think of
 
     def __init__(self):
         self.window = tk.Tk()
         self.window.title("Keifun's Datatable Editor")
         self.window.resizable(False, False)
-        #self.window.geometry("1280x720")  # Set window size to 720p
+        # self.window.geometry("1280x720")  # Set window size to 720p
 
         img = Image.open(common.resource_path("src/assets/icon.png"))  # Replace with the path to your .png file
         icon = ImageTk.PhotoImage(img)
 
         # Set the window icon
-        self.window.wm_iconphoto(True, icon) # type: ignore
+        self.window.wm_iconphoto(True, icon)  # type: ignore
 
         self.menu_bar = tk.Menu(self.window, tearoff=0)
 
-        #File Menu
+        # File Menu
         self.file_menu = tk.Menu(self.menu_bar, tearoff=0)
         self.file_menu.add_command(label="Open Datatable", accelerator="Ctrl+O", command=self.open_datatable)
         self.file_menu.add_command(label="Save Datatable", accelerator="Ctrl+S", command=self.save_datatable)
         self.file_menu.add_separator()
-        self.file_menu.add_command(label="New Song", accelerator="Ctrl+N", command=self.on_new_song) 
-        self.file_menu.add_command(label="New Song From TJA", accelerator="Ctrl+Shift+N", command=self.on_new_song_tja) 
+        self.file_menu.add_command(label="New Song", accelerator="Ctrl+N", command=self.on_new_song)
+        self.file_menu.add_command(label="New Song From TJA", accelerator="Ctrl+Shift+N", command=self.on_new_song_tja)
         self.file_menu.add_separator()
         self.file_menu.add_command(label="Settings", accelerator="Ctrl+,", command=self.create_settings_window)
         self.file_menu.add_separator()
         self.file_menu.add_command(label="Exit", command=self.window.quit)
         self.menu_bar.add_cascade(label="File", menu=self.file_menu)
 
-        #Edit Menu
+        # Edit Menu
 
         self.edit_menu = tk.Menu(self.menu_bar, tearoff=0)
-        self.edit_menu.add_command(label="Recalculate Shinuchi Score", accelerator="Ctrl+R", command=self.recalculate_shinuchi_score)
+        self.edit_menu.add_command(label="Recalculate Shinuchi Score", accelerator="Ctrl+R",
+                                   command=self.recalculate_shinuchi_score)
         self.edit_menu.add_command(label="Recalculate All", accelerator="Ctrl+Shift+R",
                                    command=self.recalculate_all)
         self.edit_menu.add_separator()
         self.edit_menu.add_command(label="Add Ura Chart", accelerator="Ctrl+U", command=self.on_add_ura)
         self.menu_bar.add_cascade(label="Edit", menu=self.edit_menu)
 
-        #Window Menu
+        # Window Menu
 
         self.window_menu = tk.Menu(self.menu_bar, tearoff=0)
         self.window_menu.add_command(label="Search", accelerator="Ctrl+F", command=self.search_view)
         self.window_menu.add_command(label="Music Order", accelerator="Ctrl+M", command=self.music_order_view)
         self.menu_bar.add_cascade(label="Window", menu=self.window_menu)
 
-        #Help Menu
-        
+        # Help Menu
+
         self.help_menu = tk.Menu(self.menu_bar, tearoff=0)
         self.help_menu.add_command(label="About", command=self.open_repo)
         self.menu_bar.add_cascade(label="Help", menu=self.help_menu)
 
         self.window.config(menu=self.menu_bar)
 
-        #Bind keys
+        # Bind keys
 
-        self.window.bind("<Control-n>", self.on_new_song) #type: ignore
-        self.window.bind("<Control-N>", self.on_new_song_tja) #type: ignore
-        self.window.bind("<Control-o>", self.open_datatable) #type: ignore
-        self.window.bind("<Control-s>", self.save_datatable) #type: ignore
-        self.window.bind("<Control-,>", self.create_settings_window) #type: ignore
+        self.window.bind("<Control-n>", self.on_new_song)  # type: ignore
+        self.window.bind("<Control-N>", self.on_new_song_tja)  # type: ignore
+        self.window.bind("<Control-o>", self.open_datatable)  # type: ignore
+        self.window.bind("<Control-s>", self.save_datatable)  # type: ignore
+        self.window.bind("<Control-,>", self.create_settings_window)  # type: ignore
         self.window.bind("<Control-u>", self.on_add_ura)  # type: ignore
         self.window.bind("<Control-f>", self.search_view)
         self.window.bind("<Control-m>", self.music_order_view)
@@ -215,8 +216,6 @@ class Program:
         self.song_delete_button = tk.Button(self.songid_frame, text="Delete", command=self.delete_song)
         self.song_delete_button.grid(row=0, column=1)
 
-
-        
         ### Song Details ###
         self.language_frame = tk.Frame(self.window, pady=5)
 
@@ -225,12 +224,13 @@ class Program:
         self.language_value.set(0)
         self.language_value.trace_add("write", self.on_language_change)
 
-        for i, lang in enumerate(['JPN', 'ENG', 'zh-TW', 'KOR', 'zh-CN']):
-            self.language_radiobuttons.append(tk.Radiobutton(self.language_frame, text=lang, variable=self.language_value, value=i))
+        for i, lang in enumerate(constants.LANGUAGES):
+            self.language_radiobuttons.append(
+                tk.Radiobutton(self.language_frame, text=lang, variable=self.language_value, value=i))
             self.language_radiobuttons[i].grid(row=0, column=i)
 
         self.language_frame.grid(row=2, column=0)
-        
+
         self.song_details_frame = tk.LabelFrame(self.window, text="Song Details", padx=20, pady=20)
         self.song_details_frame.grid(row=3, column=0)
 
@@ -270,7 +270,8 @@ class Program:
 
         self.song_name_entry = tk.Entry(self.song_details_subframes[0], textvariable=self.song_name_var)
         self.song_name_entry.grid(row=1, column=0, sticky="ew")
-        self.song_name_font_spinbox = tk.Spinbox(self.song_details_subframes[0], from_=0, to=3, width=2, textvariable=self.song_name_font_var)
+        self.song_name_font_spinbox = tk.Spinbox(self.song_details_subframes[0], from_=0, to=3, width=2,
+                                                 textvariable=self.song_name_font_var)
         self.song_name_font_spinbox.grid(row=1, column=1, sticky="w")
 
         # SONG SUB
@@ -279,7 +280,8 @@ class Program:
 
         self.song_sub_entry = tk.Entry(self.song_details_subframes[0], textvariable=self.song_sub_var)
         self.song_sub_entry.grid(row=3, column=0, sticky="ew")
-        self.song_sub_font_spinbox = tk.Spinbox(self.song_details_subframes[0], from_=0, to=3, width=2, textvariable=self.song_sub_font_var)
+        self.song_sub_font_spinbox = tk.Spinbox(self.song_details_subframes[0], from_=0, to=3, width=2,
+                                                textvariable=self.song_sub_font_var)
         self.song_sub_font_spinbox.grid(row=3, column=1, sticky="w")
 
         # SONG DETAIL
@@ -288,7 +290,8 @@ class Program:
 
         self.song_detail_entry = tk.Entry(self.song_details_subframes[0], textvariable=self.song_detail_var)
         self.song_detail_entry.grid(row=5, column=0, sticky="ew")
-        self.song_detail_font_spinbox = tk.Spinbox(self.song_details_subframes[0], from_=0, to=3, width=2, textvariable=self.song_detail_font_var)
+        self.song_detail_font_spinbox = tk.Spinbox(self.song_details_subframes[0], from_=0, to=3, width=2,
+                                                   textvariable=self.song_detail_font_var)
         self.song_detail_font_spinbox.grid(row=5, column=1, sticky="w")
 
         ## COL 2 - Anchored Left and Expanded
@@ -296,14 +299,16 @@ class Program:
         self.unique_id_label = tk.Label(self.song_details_subframes[1], text="Unique Id:", anchor="w", width=20)
         self.unique_id_label.grid(row=0, column=0, sticky="w")
 
-        self.unique_id_spinbox = tk.Spinbox(self.song_details_subframes[1], from_=0, to=9999, textvariable=self.unique_id_var)
+        self.unique_id_spinbox = tk.Spinbox(self.song_details_subframes[1], from_=0, to=9999,
+                                            textvariable=self.unique_id_var)
         self.unique_id_spinbox.grid(row=1, column=0, sticky="ew")
 
         # Main Genre
         self.genre_label = tk.Label(self.song_details_subframes[1], text="Main Genre:", anchor="w", width=20)
         self.genre_label.grid(row=2, column=0, sticky="w")
 
-        self.genre_combobox = ttk.Combobox(self.song_details_subframes[1], values=list(constants.GENRE_MAPPING.keys()), textvariable=self.genre_var)
+        self.genre_combobox = ttk.Combobox(self.song_details_subframes[1], values=list(constants.GENRE_MAPPING.keys()),
+                                           textvariable=self.genre_var)
         self.genre_combobox.grid(row=3, column=0, sticky="ew")
 
         # Song Filename
@@ -314,31 +319,36 @@ class Program:
         self.song_filename_entry.grid(row=5, column=0, sticky="ew")
 
         ## COL 3 - Anchored Left
-        
-        #Dancer
+
+        # Dancer
         self.dancer_label = tk.Label(self.song_details_subframes[2], text="Dancer:", anchor="w", width=20)
         self.dancer_label.grid(row=0, column=0, sticky="w")
 
-        self.dancer_combobox = ttk.Combobox(self.song_details_subframes[2], values=["000_default"] + list(config.config.dancers.keys()), textvariable=self.dancer_var)
+        self.dancer_combobox = ttk.Combobox(self.song_details_subframes[2],
+                                            values=["000_default"] + list(config.config.dancers.keys()),
+                                            textvariable=self.dancer_var)
         self.dancer_combobox.grid(row=1, column=0, sticky="ew")
 
-        #Placeholder label
+        # Placeholder label
 
         self.song_filename_label = tk.Label(self.song_details_subframes[2], text="", anchor="w", width=20)
         self.song_filename_label.grid(row=2, column=0, sticky="w")
 
-        self.music_order_button = tk.Button(self.song_details_subframes[2], text="Set Music Order", command=self.open_musicorder_window)
+        self.music_order_button = tk.Button(self.song_details_subframes[2], text="Set Music Order",
+                                            command=self.open_musicorder_window)
         self.music_order_button.grid(row=3, column=0, sticky="ew")
-        
+
         ## COL 4
 
         self.new_checkbutton = tk.Checkbutton(self.song_details_subframes[3], text="New", variable=self.new_var)
         self.new_checkbutton.grid(row=0, column=0, sticky="w")
 
-        self.papamama_checkbutton = tk.Checkbutton(self.song_details_subframes[3], text="Papamama", variable=self.papamama_var)
+        self.papamama_checkbutton = tk.Checkbutton(self.song_details_subframes[3], text="Papamama",
+                                                   variable=self.papamama_var)
         self.papamama_checkbutton.grid(row=1, column=0, sticky="w")
 
-        self.double_play_checkbutton = tk.Checkbutton(self.song_details_subframes[3], text="Double Play", variable=self.double_play_var)
+        self.double_play_checkbutton = tk.Checkbutton(self.song_details_subframes[3], text="Double Play",
+                                                      variable=self.double_play_var)
         self.double_play_checkbutton.grid(row=2, column=0, sticky="ew")
 
         # Make sure the subframes resize properly
@@ -347,7 +357,6 @@ class Program:
         self.song_details_subframes[2].grid_columnconfigure(0, weight=1)
         self.song_details_subframes[3].grid_columnconfigure(0, weight=1)
 
-                
         ### Difficulty Info ###
         self.difficulty_info_label_frame = tk.LabelFrame(self.window, text="Difficulty Info", padx=20, pady=10)
         self.difficulty_info_label_frame.grid(row=4, column=0)
@@ -356,11 +365,13 @@ class Program:
         self.decouple_duet_var = tk.BooleanVar(value=False)
         self.decouple_duet_var.trace_add("write", self.on_decouple_duet_change)
         self.duet_frame = tk.Frame(self.difficulty_info_label_frame)
-        self.duet_frame.grid(row=0, column=0)    
+        self.duet_frame.grid(row=0, column=0)
 
-        self.decouple_duet_checkbutton = tk.Checkbutton(self.duet_frame, text="Decouple Duet Values", variable=self.decouple_duet_var)
+        self.decouple_duet_checkbutton = tk.Checkbutton(self.duet_frame, text="Decouple Duet Values",
+                                                        variable=self.decouple_duet_var)
         self.decouple_duet_checkbutton.grid(row=0, column=0)
-        self.show_duet_checkbutton = tk.Checkbutton(self.duet_frame, text="Show Duet Values", variable=self.show_duet_var, anchor="w", width=112)
+        self.show_duet_checkbutton = tk.Checkbutton(self.duet_frame, text="Show Duet Values",
+                                                    variable=self.show_duet_var, anchor="w", width=112)
         self.show_duet_checkbutton.grid(row=0, column=1)
         self.difficulty_info_frame = tk.Frame(self.difficulty_info_label_frame)
         self.difficulty_info_frame.grid(row=1, column=0)
@@ -385,21 +396,21 @@ class Program:
         self.branch_spike_frames = list()
 
         self.branch_checkbuttons = list()
-        self.branch_values =  [tk.BooleanVar(), tk.BooleanVar(), tk.BooleanVar(), tk.BooleanVar(), tk.BooleanVar()]
+        self.branch_values = [tk.BooleanVar(), tk.BooleanVar(), tk.BooleanVar(), tk.BooleanVar(), tk.BooleanVar()]
         self.spike_on_spinboxes = list()
-        self.spike_on_values =  [tk.IntVar(), tk.IntVar(), tk.IntVar(), tk.IntVar(), tk.IntVar()]
+        self.spike_on_values = [tk.IntVar(), tk.IntVar(), tk.IntVar(), tk.IntVar(), tk.IntVar()]
         self.star_spinboxes = list()
-        self.star_values =  [tk.IntVar(), tk.IntVar(), tk.IntVar(), tk.IntVar(), tk.IntVar()]
+        self.star_values = [tk.IntVar(), tk.IntVar(), tk.IntVar(), tk.IntVar(), tk.IntVar()]
         self.shinuchi_spinboxes = list()
-        self.shinuchi_values =  [tk.IntVar(), tk.IntVar(), tk.IntVar(), tk.IntVar(), tk.IntVar()]
+        self.shinuchi_values = [tk.IntVar(), tk.IntVar(), tk.IntVar(), tk.IntVar(), tk.IntVar()]
         self.shinuchi_score_spinboxes = list()
-        self.shinuchi_score_values =  [tk.IntVar(), tk.IntVar(), tk.IntVar(), tk.IntVar(), tk.IntVar()]
+        self.shinuchi_score_values = [tk.IntVar(), tk.IntVar(), tk.IntVar(), tk.IntVar(), tk.IntVar()]
         self.onpu_num_spinboxes = list()
-        self.onpu_num_values =  [tk.IntVar(), tk.IntVar(), tk.IntVar(), tk.IntVar(), tk.IntVar()]
+        self.onpu_num_values = [tk.IntVar(), tk.IntVar(), tk.IntVar(), tk.IntVar(), tk.IntVar()]
         self.renda_time_entries = list()
-        self.renda_time_values =  [tk.StringVar(), tk.StringVar(), tk.StringVar(), tk.StringVar(), tk.StringVar()]
+        self.renda_time_values = [tk.StringVar(), tk.StringVar(), tk.StringVar(), tk.StringVar(), tk.StringVar()]
         self.fuusen_total_spinboxes = list()
-        self.fuusen_total_values =  [tk.IntVar(), tk.IntVar(), tk.IntVar(), tk.IntVar(), tk.IntVar()]
+        self.fuusen_total_values = [tk.IntVar(), tk.IntVar(), tk.IntVar(), tk.IntVar(), tk.IntVar()]
         self.ai_sections_comboboxes = list()
         self.ai_sections_frames = list()
         self.ai_sections_radiobuttons = list()
@@ -411,15 +422,22 @@ class Program:
 
         for i in range(5):
             self.difficulty_info_sub_frames[i].grid(row=1, column=i)
-            
-            self.star_labels.append(tk.Label(self.difficulty_info_sub_frames[i], text="Star Difficulty:", anchor="w", width=20))
-            self.shinuchi_labels.append(tk.Label(self.difficulty_info_sub_frames[i], text="Shinuchi:", anchor="w", width=20))
-            self.shinuchi_score_labels.append(tk.Label(self.difficulty_info_sub_frames[i], text="Shinuchi Score:", anchor="w", width=20))
-            self.onpu_num_labels.append(tk.Label(self.difficulty_info_sub_frames[i], text="Onpu Number:", anchor="w", width=20))
-            self.renda_time_labels.append(tk.Label(self.difficulty_info_sub_frames[i], text="Renda Time:", anchor="w", width=20))            
-            self.fuusen_total_labels.append(tk.Label(self.difficulty_info_sub_frames[i], text="Fuusen Total:", anchor="w", width=20))
-            self.ai_sections_labels.append(tk.Label(self.difficulty_info_sub_frames[i], text="AI sections:", anchor="w", width=20))
-            
+
+            self.star_labels.append(
+                tk.Label(self.difficulty_info_sub_frames[i], text="Star Difficulty:", anchor="w", width=20))
+            self.shinuchi_labels.append(
+                tk.Label(self.difficulty_info_sub_frames[i], text="Shinuchi:", anchor="w", width=20))
+            self.shinuchi_score_labels.append(
+                tk.Label(self.difficulty_info_sub_frames[i], text="Shinuchi Score:", anchor="w", width=20))
+            self.onpu_num_labels.append(
+                tk.Label(self.difficulty_info_sub_frames[i], text="Onpu Number:", anchor="w", width=20))
+            self.renda_time_labels.append(
+                tk.Label(self.difficulty_info_sub_frames[i], text="Renda Time:", anchor="w", width=20))
+            self.fuusen_total_labels.append(
+                tk.Label(self.difficulty_info_sub_frames[i], text="Fuusen Total:", anchor="w", width=20))
+            self.ai_sections_labels.append(
+                tk.Label(self.difficulty_info_sub_frames[i], text="AI sections:", anchor="w", width=20))
+
             self.star_labels[i].grid(row=1, column=0)
             self.shinuchi_labels[i].grid(row=3, column=0)
             self.shinuchi_score_labels[i].grid(row=5, column=0)
@@ -429,18 +447,28 @@ class Program:
             self.ai_sections_labels[i].grid(row=13, column=0)
 
             self.branch_spike_frames.append(tk.Frame(self.difficulty_info_sub_frames[i]))
-            self.branch_checkbuttons.append(tk.Checkbutton(self.branch_spike_frames[i], text="Branch", variable=self.branch_values[i], width=7, anchor='w')) 
-            self.spike_on_spinboxes.append(tk.Spinbox(self.branch_spike_frames[i], textvariable=self.spike_on_values[i], width=2, from_=0, to=99)) 
+            self.branch_checkbuttons.append(
+                tk.Checkbutton(self.branch_spike_frames[i], text="Branch", variable=self.branch_values[i], width=7,
+                               anchor='w'))
+            self.spike_on_spinboxes.append(
+                tk.Spinbox(self.branch_spike_frames[i], textvariable=self.spike_on_values[i], width=2, from_=0, to=99))
 
             self.spike_on_labels.append(tk.Label(self.branch_spike_frames[i], text="Spike On"))
 
-            self.star_spinboxes.append(tk.Spinbox(self.difficulty_info_sub_frames[i], from_=0, to=10, textvariable=self.star_values[i]))
-            self.shinuchi_spinboxes.append(tk.Spinbox(self.difficulty_info_sub_frames[i], from_=1, to=99999999, textvariable=self.shinuchi_values[i]))
-            self.shinuchi_score_spinboxes.append(tk.Spinbox(self.difficulty_info_sub_frames[i], from_=1, to=99999999, textvariable=self.shinuchi_score_values[i]))
-            self.onpu_num_spinboxes.append(tk.Spinbox(self.difficulty_info_sub_frames[i], from_=0, to=99999999, textvariable=self.onpu_num_values[i]))
-            self.renda_time_entries.append(tk.Entry(self.difficulty_info_sub_frames[i], textvariable=self.renda_time_values[i], width=22))
-            self.fuusen_total_spinboxes.append(tk.Spinbox(self.difficulty_info_sub_frames[i], textvariable=self.fuusen_total_values[i], from_=0, to=99999999))
-            #self.ai_sections_comboboxes.append(ttk.Combobox(self.difficulty_info_sub_frames[i], values=['3','5']))
+            self.star_spinboxes.append(
+                tk.Spinbox(self.difficulty_info_sub_frames[i], from_=0, to=10, textvariable=self.star_values[i]))
+            self.shinuchi_spinboxes.append(tk.Spinbox(self.difficulty_info_sub_frames[i], from_=1, to=99999999,
+                                                      textvariable=self.shinuchi_values[i]))
+            self.shinuchi_score_spinboxes.append(tk.Spinbox(self.difficulty_info_sub_frames[i], from_=1, to=99999999,
+                                                            textvariable=self.shinuchi_score_values[i]))
+            self.onpu_num_spinboxes.append(tk.Spinbox(self.difficulty_info_sub_frames[i], from_=0, to=99999999,
+                                                      textvariable=self.onpu_num_values[i]))
+            self.renda_time_entries.append(
+                tk.Entry(self.difficulty_info_sub_frames[i], textvariable=self.renda_time_values[i], width=22))
+            self.fuusen_total_spinboxes.append(
+                tk.Spinbox(self.difficulty_info_sub_frames[i], textvariable=self.fuusen_total_values[i], from_=0,
+                           to=99999999))
+            # self.ai_sections_comboboxes.append(ttk.Combobox(self.difficulty_info_sub_frames[i], values=['3','5']))
             self.ai_sections_frames.append(tk.Frame(self.difficulty_info_sub_frames[i]))
             self.ai_sections_radiobuttons.append(
                 [
@@ -450,9 +478,10 @@ class Program:
             )
 
             if i >= 3:
-                self.ai_hard_checkbuttons.append(tk.Checkbutton(self.ai_sections_frames[i], text="Hard", variable=self.ai_hard_values[i-3]))
-                self.ai_hard_checkbuttons[i-3].grid(row=0, column=3)
-            
+                self.ai_hard_checkbuttons.append(
+                    tk.Checkbutton(self.ai_sections_frames[i], text="Hard", variable=self.ai_hard_values[i - 3]))
+                self.ai_hard_checkbuttons[i - 3].grid(row=0, column=3)
+
             self.branch_spike_frames[i].grid(row=0, column=0)
             self.branch_checkbuttons[i].grid(row=0, column=0)
             self.spike_on_spinboxes[i].grid(row=0, column=1)
@@ -463,7 +492,7 @@ class Program:
             self.onpu_num_spinboxes[i].grid(row=8, column=0)
             self.renda_time_entries[i].grid(row=10, column=0)
             self.fuusen_total_spinboxes[i].grid(row=12, column=0)
-            #self.ai_sections_comboboxes[i].grid(row=14, column=0)
+            # self.ai_sections_comboboxes[i].grid(row=14, column=0)
             self.ai_sections_frames[i].grid(row=14, column=0)
             self.ai_sections_radiobuttons[i][0].grid(row=0, column=0)
             self.ai_sections_radiobuttons[i][1].grid(row=0, column=1)
@@ -472,7 +501,8 @@ class Program:
                 widget.grid_configure(padx=5, pady=1)
 
         self.star_label = tk.Label(self.window, text="Enjoying KDE? Consider starring the repo ⭐", cursor="hand2")
-        self.star_label.grid(row=5, column=0, columnspan=2, pady=(0, 5), padx=(0, 10), sticky='e')  # Added padx and sticky='e'
+        self.star_label.grid(row=5, column=0, columnspan=2, pady=(0, 5), padx=(0, 10),
+                             sticky='e')  # Added padx and sticky='e'
         self.star_label.bind("<Button-1>", self.open_repo)
         self.star_label.bind("<Enter>", self.star_on_enter)
         self.star_label.bind("<Leave>", self.star_on_leave)
@@ -516,35 +546,41 @@ class Program:
             self.music_order_genre_display_var.append(tk.BooleanVar())
             self.music_order_genre_display_var[i].set(self.song_info.musicOrder[i][0] != -1)
 
-
             # Frame to contain each genre's components
             self.music_order_genre_frame.append(tk.Frame(main_frame))
-            self.music_order_genre_frame[i].grid(row=i+1, column=0, sticky="w", pady=5)
+            self.music_order_genre_frame[i].grid(row=i + 1, column=0, sticky="w", pady=5)
 
             # Genre name label
-            self.music_order_genre_order_labels.append(tk.Label(self.music_order_genre_frame[i], text=f"{genre}:", pady=5, anchor="w", width=20))
+            self.music_order_genre_order_labels.append(
+                tk.Label(self.music_order_genre_frame[i], text=f"{genre}:", pady=5, anchor="w", width=20))
             self.music_order_genre_order_labels[i].grid(row=0, column=0, padx=3, sticky="w")
 
             # Checkbox for display (placed between the genre label and the spinbox)
-            self.music_order_genre_display_checkbuttons.append(tk.Checkbutton(self.music_order_genre_frame[i], variable=self.music_order_genre_display_var[i]))
+            self.music_order_genre_display_checkbuttons.append(
+                tk.Checkbutton(self.music_order_genre_frame[i], variable=self.music_order_genre_display_var[i]))
             self.music_order_genre_display_checkbuttons[i].grid(row=0, column=1, padx=5)
 
             # Order Spinbox
             self.music_order_genre_order_var.append(tk.IntVar())
             self.music_order_genre_order_var[i].set(self.song_info.musicOrder[i][0])
-            self.music_order_genre_order_spinboxes.append(tk.Spinbox(main_frame, textvariable=self.music_order_genre_order_var[i], from_=-1, to=9999, width=6))
-            self.music_order_genre_order_spinboxes[i].grid(row=i+1, column=2, padx=5, sticky="w")
+            self.music_order_genre_order_spinboxes.append(
+                tk.Spinbox(main_frame, textvariable=self.music_order_genre_order_var[i], from_=-1, to=9999, width=6))
+            self.music_order_genre_order_spinboxes[i].grid(row=i + 1, column=2, padx=5, sticky="w")
 
             # Close Disp Type Spinbox
             self.music_order_genre_close_disp_type_var.append(tk.IntVar(value=self.song_info.musicOrder[i][1]))
-            self.music_order_genre_close_disp_type_spinbox.append(tk.Spinbox(main_frame, from_=0, to=99, width=6, textvariable=self.music_order_genre_close_disp_type_var[i]))
-            self.music_order_genre_close_disp_type_spinbox[i].grid(row=i+1, column=3, padx=5, sticky="w")
+            self.music_order_genre_close_disp_type_spinbox.append(tk.Spinbox(main_frame, from_=0, to=99, width=6,
+                                                                             textvariable=
+                                                                             self.music_order_genre_close_disp_type_var[
+                                                                                 i]))
+            self.music_order_genre_close_disp_type_spinbox[i].grid(row=i + 1, column=3, padx=5, sticky="w")
 
         # Add the submit button at the bottom and center it
         self.music_order_button_frame = tk.Frame(self.music_order_window, pady=5)
-        self.music_order_button_frame.grid(row=len(constants.GENRE_MAPPING)+2, column=0, pady=5)
+        self.music_order_button_frame.grid(row=len(constants.GENRE_MAPPING) + 2, column=0, pady=5)
 
-        self.music_order_submit_button = tk.Button(self.music_order_button_frame, text="Update", command=self.on_music_order_submit)
+        self.music_order_submit_button = tk.Button(self.music_order_button_frame, text="Update",
+                                                   command=self.on_music_order_submit)
         self.music_order_submit_button.grid(row=0, column=0)
 
         # Adjust the column stretching to resize properly
@@ -554,7 +590,7 @@ class Program:
         self.song_delete_button.config(state="disabled")
         for child in parent.winfo_children():
             if child == self.songid_entry:
-                continue 
+                continue
             if isinstance(child, (tk.Entry, tk.Radiobutton, tk.Checkbutton, tk.Spinbox, tk.Button)):
                 child.config(state="disabled")
             elif isinstance(child, (tk.Frame, tk.LabelFrame)):
@@ -564,8 +600,9 @@ class Program:
         self.song_delete_button.config(state="normal")
         for child in parent.winfo_children():
             if child == self.songid_entry:
-                continue 
-            elif child in [self.genre_combobox, self.dancer_combobox, self.song_name_font_spinbox, self.song_sub_font_spinbox, self.song_detail_font_spinbox]:
+                continue
+            elif child in [self.genre_combobox, self.dancer_combobox, self.song_name_font_spinbox,
+                           self.song_sub_font_spinbox, self.song_detail_font_spinbox]:
                 child.config(state="readonly")
             elif isinstance(child, (tk.Entry, tk.Radiobutton, tk.Checkbutton, tk.Spinbox, tk.Button)):
                 child.config(state="normal")
@@ -585,6 +622,7 @@ class Program:
                 messagebox.showinfo('Delete Song', 'Song deleted successfully')
             except Exception as e:
                 messagebox.showerror('Delete Song', f'Delete Song Error: {e}')
+                traceback.print_exc()
                 return
 
     def search_view(self, *args):
@@ -609,7 +647,8 @@ class Program:
             data = [(genre, (x.title[langvar.get()], x.sub[langvar.get()], x.id, x.uniqueId))
                     for genre, e in enumerate(song_list)
                     for x in e
-                    if query in x.title[langvar.get()].lower() or query in x.sub[langvar.get()].lower() or query in x.id.lower() or query in str(x.uniqueId)]  # god forgive me
+                    if query in x.title[langvar.get()].lower() or query in x.sub[
+                        langvar.get()].lower() or query in x.id.lower() or query in str(x.uniqueId)]  # god forgive me
             tree.delete(*tree.get_children())
             for e in data:
                 tree.insert("", tk.END, values=e[1], tags=(str(e[0])))
@@ -626,12 +665,11 @@ class Program:
 
         search_frame.grid(row=0, column=0)
 
-
         language_frame = tk.Frame(search_window, pady=5)
         language_radiobuttons = list()
         langvar.trace_add("write", perform_search)
 
-        for i, lang in enumerate(['JPN', 'ENG', 'zh-TW', 'KOR', 'zh-CN']):
+        for i, lang in enumerate(constants.LANGUAGES):
             language_radiobuttons.append(
                 tk.Radiobutton(language_frame, text=lang, variable=langvar, value=i))
             language_radiobuttons[i].grid(row=0, column=i)
@@ -640,10 +678,11 @@ class Program:
 
         # Create and place the results table
         tree_frame = ttk.Frame(search_window)
-        tree_frame.grid(row=2, column=0, padx=10, pady=10, sticky='nsew')
+        tree_frame.grid(row=2, column=0, padx=(10, 0), pady=10, sticky='nsew')
 
         # Create and place the results table
-        tree = ttk.Treeview(tree_frame, columns=("Title", "Sub", "SongId", "UniqueId"), show="headings", height=35)
+        tree = ttk.Treeview(tree_frame, columns=("Title", "Sub", "SongId", "UniqueId"), show="headings",
+                            selectmode="browse", height=35)
 
         def on_double_click(event):
             nonlocal search_window, tree
@@ -653,7 +692,8 @@ class Program:
             self.load_song(old_songid, new_songid)
             self.songid_entry.delete(0, tk.END)
             self.songid_entry.insert(0, new_songid)
-            search_window.destroy()
+            if config.config.auto_close_search:
+                search_window.destroy()
 
         tree.bind("<Double-1>", on_double_click)
 
@@ -721,7 +761,8 @@ class Program:
                     genre_iid = f"genre_{genre}"
                     for song in songs:
                         values = (song.musicOrderIndex,
-                                  "♦ " + song.title[langvar.get()] if song.new else song.title[langvar.get()],  # add star for main
+                                  "♦ " + song.title[langvar.get()] if song.new else song.title[langvar.get()],
+                                  # add star for main
                                   song.id,
                                   song.uniqueId)
                         tree.insert(genre_iid, tk.END, values=values, tags=(str(genre)))
@@ -734,7 +775,8 @@ class Program:
                         current_values = tree.item(item)['values']
                         new_values = (
                             current_values[0],  # musicOrderIndex
-                            "♦ " + song.title[langvar.get()] if song.new else song.title[langvar.get()],  # add star for main
+                            "♦ " + song.title[langvar.get()] if song.new else song.title[langvar.get()],
+                            # add star for main
                             current_values[2],  # id
                             current_values[3]  # uniqueId
                         )
@@ -751,12 +793,11 @@ class Program:
         #
         # search_frame.grid(row=0, column=0)
 
-
         language_frame = tk.Frame(musicorder_window, pady=5)
         language_radiobuttons = list()
         langvar.trace_add("write", refresh_list)
 
-        for i, lang in enumerate(['JPN', 'ENG', 'zh-TW', 'KOR', 'zh-CN']):
+        for i, lang in enumerate(constants.LANGUAGES):
             language_radiobuttons.append(
                 tk.Radiobutton(language_frame, text=lang, variable=langvar, value=i))
             language_radiobuttons[i].grid(row=0, column=i)
@@ -914,7 +955,7 @@ class Program:
             def submit(*args):
                 song_id = song_id_entry.get()
                 if not song_id:
-                    messagebox.showerror("Add Song", "Please enter a Song ID")
+                    messagebox.showerror("Add Song", "Please enter a Song ID", parent=popup)
                     return
 
                 selected_item = tree.selection()[0]
@@ -936,9 +977,8 @@ class Program:
                     messagebox.showerror("Add Song", str(e))
                     return
 
-
                 # Create a new song object and add it to song_list
-                new_song = dt.SongListItem() # Create new instance of same class
+                new_song = dt.SongListItem()  # Create new instance of same class
                 new_song.musicOrderIndex = selected_order
                 new_song.id = song_id
                 new_song.title = [x for (x, _) in song_info.songNameList]  # Use the actual song names
@@ -950,7 +990,8 @@ class Program:
 
                 # Add new song to tree with retrieved info
                 new_values = (
-                selected_order, "♦ " + song_info.songNameList[langvar.get()][0] if new_song.new else song_info.songNameList[langvar.get()][0], song_id, str(song_info.uniqueId))
+                    selected_order, "♦ " + song_info.songNameList[langvar.get()][0] if new_song.new else
+                    song_info.songNameList[langvar.get()][0], song_id, str(song_info.uniqueId))
                 tree.insert(parent, tree.index(selected_item), values=new_values, tags=(str(genre_id)))
 
                 # Update orders for subsequent songs in both tree and song_list
@@ -970,7 +1011,7 @@ class Program:
         def remove_song():
             selected_item = tree.selection()
             if not selected_item:
-                messagebox.showwarning("Remove Song", "Please select a song to remove")
+                messagebox.showwarning("Remove Song", "Please select a song to remove", parent=musicorder_window)
                 return
             if not tree.parent(selected_item[0]):
                 return
@@ -1051,9 +1092,7 @@ class Program:
                         current_index = genre_items.index(genre_item)
                         song_list[genre_id][current_index].new = will_be_new
 
-
-
-        #Controls
+        # Controls
 
         # Add your button to the controls frame
         controls_frame = tk.Frame(musicorder_window)
@@ -1088,7 +1127,6 @@ class Program:
 
         controls_frame.grid(row=1, column=0, pady=5)
 
-
         # Create and place the results table
         tree_frame = ttk.Frame(musicorder_window)
         tree_frame.grid(row=2, column=0, padx=10, pady=10, sticky='nsew')
@@ -1096,7 +1134,8 @@ class Program:
         # Create and place the results table - note the change to show="tree headings"
         tree = ttk.Treeview(tree_frame,
                             columns=("Music Order", "Title", "SongId", "UniqueId"),
-                            show="tree headings", height=35)  # Changed this line to show tree structure
+                            show="tree headings", selectmode="browse",
+                            height=35)  # Changed this line to show tree structure
 
         # Create vertical scrollbar
         vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=tree.yview)
@@ -1128,7 +1167,6 @@ class Program:
 
         # cancel and save button
 
-
         def save_changes():
             self.datatable.set_music_order(song_list)
             for song_id in changed_new_status:
@@ -1148,10 +1186,6 @@ class Program:
 
         cancel_button = ttk.Button(button_frame, text='Cancel', command=cancel_changes)
         cancel_button.pack(side='right', padx=(5, 0))
-
-
-
-
 
     def on_new_song(self, *args):
         if not hasattr(self, 'datatable'):
@@ -1180,6 +1214,7 @@ class Program:
         self.new_song_id_entry.focus()
 
         new_id = ''
+
         def on_create(*args):
             nonlocal new_id
             new_id_candidate = self.new_song_id_entry.get()
@@ -1196,7 +1231,7 @@ class Program:
             self.new_song_window.destroy()
 
         self.new_song_id_entry.bind('<Return>', on_create)
-        self.new_song_confirm = tk.Button(self.new_song_window, text="Create", command=on_create) #type: ignore
+        self.new_song_confirm = tk.Button(self.new_song_window, text="Create", command=on_create)  # type: ignore
         self.new_song_confirm.grid(row=1, column=1)
 
         self.new_song_window.wait_window()
@@ -1212,9 +1247,10 @@ class Program:
             self.initial = False
             # self.enable_all_widgets(self.window)
 
-    def on_new_song_tja(self, *args): #I know a lot of the code here is mostly a copy of above but who gives
+    def on_new_song_tja(self, *args):  # I know a lot of the code here is mostly a copy of above but who gives
         if not hasattr(self, 'datatable'):
-            use_without_datatable = messagebox.askokcancel('New Song from TJA','No datatable is loaded. Do you want to create fumen/sound files anyway?')
+            use_without_datatable = messagebox.askokcancel('New Song from TJA',
+                                                           'No datatable is loaded. Do you want to create fumen/sound files anyway?')
             if not use_without_datatable:
                 return
         else:
@@ -1225,7 +1261,7 @@ class Program:
             except Exception as e:
                 messagebox.showerror('Save Song', f'Song Save Error: {e}')
                 return
-        
+
         self.new_song_window = tk.Toplevel(self.window, pady=10, padx=10)
         self.new_song_window.attributes('-toolwindow', True)
 
@@ -1243,23 +1279,24 @@ class Program:
         self.new_song_id_entry.focus()
 
         new_id = ''
+
         def on_create(*args):
             nonlocal new_id, use_without_datatable
             new_id_candidate = self.new_song_id_entry.get()
             if not new_id_candidate:
                 messagebox.showerror('New Song', 'Enter a Song Id')
-                return  
+                return
             if 3 > len(new_id_candidate) or len(new_id_candidate) > 8:
                 messagebox.showerror('New Song', 'Song Id must be between 3 and 8 characters long')
-                return 
+                return
             if not use_without_datatable and self.datatable.is_song_id_taken(new_id_candidate):
                 messagebox.showerror('New Song', 'Song Id already taken')
                 return
             new_id = new_id_candidate
             self.new_song_window.destroy()
-            
+
         self.new_song_id_entry.bind('<Return>', on_create)
-        self.new_song_confirm = tk.Button(self.new_song_window, text="Create", command=on_create) #type: ignore
+        self.new_song_confirm = tk.Button(self.new_song_window, text="Create", command=on_create)  # type: ignore
         self.new_song_confirm.grid(row=1, column=1)
 
         self.new_song_window.wait_window()
@@ -1269,14 +1306,14 @@ class Program:
         tja_path = filedialog.askopenfilename(title="Select a TJA file", filetypes=[("TJA File", ".tja")])
         if not tja_path:
             return
-        
+
         try:
             data = parse_tja.parse_and_get_data(tja_path)
         except Exception as e:
             messagebox.showerror('TJA Import', f'TJA Import Error: {e}')
             return
-        
-        if use_without_datatable: 
+
+        if use_without_datatable:
             generate_files = True
         else:
             generate_files = messagebox.askyesno("TJA Import", "Do you want to generate fumen and sound files?")
@@ -1285,8 +1322,8 @@ class Program:
             if not config.config.fumen_key:
                 messagebox.showerror('Fumen Generate', 'Fumen Generation Error: Empty Fumen Key')
                 return
-            
-            #check if ffmpeg components are in path
+
+            # check if ffmpeg components are in path
             ffmpeg_present = shutil.which('ffmpeg') is not None
             ffprobe_present = shutil.which('ffprobe') is not None
 
@@ -1296,19 +1333,19 @@ class Program:
                     missing_components.append("ffmpeg")
                 if not ffprobe_present:
                     missing_components.append("ffprobe")
-                
+
                 missing_str = " and ".join(missing_components)
-                
+
                 error_title = "Missing Components"
                 error_message = f"{missing_str} {'is' if len(missing_components) == 1 else 'are'} not found in the system PATH.\n"
                 error_message += "Please install the missing component(s) and add them to your system PATH."
-            
+
                 messagebox.showerror(error_title, error_message)
                 return
-            
-            
+
             def set_sound():
-                sound_filepath.set(filedialog.askopenfilename(title="Select a Sound file", filetypes=[("Audio Files", ".wav .ogg")]))
+                sound_filepath.set(
+                    filedialog.askopenfilename(title="Select a Sound file", filetypes=[("Audio Files", ".wav .ogg")]))
 
             def set_out_dir():
                 path = filedialog.askdirectory(title='Export Directory')
@@ -1321,21 +1358,21 @@ class Program:
                     # Retrieve the current values of the offsets
                     preview_offset = preview_offset_var.get()
                     chart_start_offset = chart_start_offset_var.get()
-                    
+
                     # Convert to milliseconds if the user has selected seconds ('s')
                     if time_unit_var.get() == "s":
                         preview_offset *= 1000  # Convert seconds to milliseconds
                         chart_start_offset *= 1000  # Convert seconds to milliseconds
 
                     # If the time unit is 'ms', leave the values as they are (already in ms)
-                    
+
                     # Pass the offsets (in ms) to the fumen conversion function
                     fumen.convert_tja_to_fumen_files(
-                        new_id, 
-                        tja_path, 
-                        sound_filepath.get(), 
-                        preview_offset, 
-                        chart_start_offset, 
+                        new_id,
+                        tja_path,
+                        sound_filepath.get(),
+                        preview_offset,
+                        chart_start_offset,
                         out_dir_path.get()
                     )
 
@@ -1344,7 +1381,6 @@ class Program:
                     messagebox.showinfo('Fumen Generate', 'Successfully generated files')
                 except Exception as e:
                     messagebox.showerror('Fumen Generate', f'Fumen Generation Error: {e}')
-
 
             # Create a new Toplevel window
             config_window = tk.Toplevel()
@@ -1410,10 +1446,10 @@ class Program:
             generate_button.grid(row=7, column=0, pady=5)
 
             config_window.wait_window()
-            
+
         if use_without_datatable or generate_files and not export_complete: return
-        
-        self.song_info = dt.Song(id=new_id, 
+
+        self.song_info = dt.Song(id=new_id,
                                  star=data.star,
                                  shinuti=data.shinuti,
                                  shinuti_duet=data.shinuti,
@@ -1425,7 +1461,7 @@ class Program:
                                  music_ai_section=[5 if l > 100 else 3 for l in data.length],
                                  songFileName=f'sound/song_{new_id}'
                                  )
-        
+
         for i in range(4):
             self.song_info.songNameList[i] = (data.title, i)
             self.song_info.songSubList[i] = (data.sub, i)
@@ -1433,7 +1469,7 @@ class Program:
         self.songid_entry.insert(0, new_id)
         self.current_songid = new_id
         self.populate_ui(no_query=True)
-        self.song_info.uniqueId = -1 #Do this so when saving song it always checks for existing unique id
+        self.song_info.uniqueId = -1  # Do this so when saving song it always checks for existing unique id
         if self.initial:
             self.initial = False
             # self.enable_all_widgets(self.window)
@@ -1480,7 +1516,6 @@ class Program:
             song_id = new_id_candidate
             self.new_song_window.destroy()
 
-
         self.new_song_id_entry.bind('<Return>', on_create)
         self.new_song_confirm = tk.Button(self.new_song_window, text="Create", command=on_create)  # type: ignore
         self.new_song_confirm.grid(row=1, column=1)
@@ -1503,7 +1538,8 @@ class Program:
             messagebox.showerror('Add Ura Chart', f'TJA File has no Ura chart')
             return
 
-        path_to_x64 = filedialog.askdirectory(initialdir=config.config.game_files_out_dir, title="Import/Export Directory (x64 directory)")
+        path_to_x64 = filedialog.askdirectory(initialdir=config.config.game_files_out_dir,
+                                              title="Import/Export Directory (x64 directory)")
 
         try:
             fumen.add_ura_to_song(song_id, tja_path, path_to_x64)
@@ -1527,13 +1563,12 @@ class Program:
         if self.initial:
             self.initial = False
 
-
     def check_and_confirm_uid(self, uniqueId: int) -> bool:
         """
         Returns if uid can be used / uid initially in use is changed
         """
         if not self.datatable.is_uid_taken(uniqueId): return True
-        
+
         response = messagebox.askyesno("Duplicate UniqueId", f"UniqueId {uniqueId} already exists, use anyway?")
         if not response: return False
 
@@ -1559,7 +1594,7 @@ class Program:
         new_uid_window.focus_set()
 
         new_uid_window.title(f'Update uniqueId {uniqueId}')
-        prompt = tk.Label(new_uid_window, text = 'Enter a new UniqueId for the song to overwrite the existing one')
+        prompt = tk.Label(new_uid_window, text='Enter a new UniqueId for the song to overwrite the existing one')
         prompt.grid(row=0, column=0)
         new_uid_var = tk.IntVar()
         new_uid_entry = tk.Spinbox(new_uid_window, textvariable=new_uid_var)
@@ -1571,7 +1606,7 @@ class Program:
 
         new_uid_window.wait_window()
         return ret
-    
+
     def run(self):
         self.window.mainloop()
 
@@ -1611,7 +1646,7 @@ class Program:
             self.song_info = dt.Song()
             self.current_songid = ""
             self.populate_ui(True)
-            self.songid_entry.delete(0,tk.END)
+            self.songid_entry.delete(0, tk.END)
             self.disable_all_widgets(self.window)
             self.initial = True
             messagebox.showinfo('Import Datable', 'Import success')
@@ -1636,42 +1671,119 @@ class Program:
             if datatable_key != config.config.datatable_key or fumen_key != config.config.fumen_key:
                 config.config.update_keys(datatable_key, fumen_key)
 
+            auto_close = auto_close_var.get()
+            if auto_close != config.config.auto_close_search:
+                config.config.update_auto_close_search(auto_close)
+
             config_window.destroy()
 
-        # Create a new Toplevel window
+        # Create main window with improved styling
         config_window = tk.Toplevel()
         config_window.grab_set()
         config_window.focus_set()
-        config_window.title("Enter Settings")
+        config_window.title("Settings")
         config_window.attributes('-toolwindow', True)
 
-        # Create Label and Entry for Required Renda Speed
-        tk.Label(config_window, text="Default Required Renda Speed:").grid(row=0, column=0, padx=10, pady=10)
-        entry_renda_speed = tk.Entry(config_window, width=15)  # Changed width to 15
-        entry_renda_speed.grid(row=0, column=1, padx=10, pady=10, sticky='w')  # Added sticky='w' to left-align
+        # Set minimum window size
+        config_window.minsize(500, 250)
+
+        # Add padding around the entire window
+        main_frame = ttk.Frame(config_window)
+        main_frame.grid(row=0, column=0, sticky="nsew", padx=15, pady=(10, 2))
+        config_window.grid_columnconfigure(0, weight=1)
+        config_window.grid_rowconfigure(0, weight=1)
+
+        # Create styled frames for different sections
+        general_frame = ttk.LabelFrame(main_frame, text="General", padding="10")
+        general_frame.grid(row=0, column=0, sticky="nsew", pady=(0, 15))
+        main_frame.grid_columnconfigure(0, weight=1)
+
+        aes_key_frame = ttk.LabelFrame(main_frame, text="AES Keys", padding="10")
+        aes_key_frame.grid(row=1, column=0, sticky="nsew", pady=(0, 15))
+
+        # Gameplay Settings
+        renda_label = ttk.Label(general_frame, text="Default Required Renda Speed:")
+        renda_label.grid(row=0, column=0, padx=5, pady=5, sticky="w")
+
+        entry_renda_speed = ttk.Entry(general_frame, width=15)
+        entry_renda_speed.grid(row=0, column=1, padx=5, pady=5, sticky="w")
         entry_renda_speed.insert(0, str(config.config.default_required_renda_speed))
 
-        # Create Label and Entry for Datatable Key
-        tk.Label(config_window, text="Datatable Key:").grid(row=1, column=0, padx=10, pady=10)
-        entry_datatable_key = tk.Entry(config_window, width=70)
-        entry_datatable_key.focus()
-        entry_datatable_key.grid(row=1, column=1, padx=10, pady=10)
+        # Auto close checkbox in gameplay frame
+        auto_close_var = tk.BooleanVar(value=config.config.auto_close_search)
+        auto_close_checkbox = ttk.Checkbutton(
+            general_frame,
+            text="Auto close search window after selection",
+            variable=auto_close_var
+        )
+        auto_close_checkbox.grid(row=1, column=0, columnspan=2, pady=5, sticky="w")
 
-        # Create Label and Entry for Fumen Key
-        tk.Label(config_window, text="Fumen Key:").grid(row=2, column=0, padx=10, pady=10)
-        entry_fumen_key = tk.Entry(config_window, width=70)
-        entry_fumen_key.grid(row=2, column=1, padx=10, pady=5)
+        # API Settings
+        # Datatable Key
+        datatable_label = ttk.Label(aes_key_frame, text="Datatable Key:")
+        datatable_label.grid(row=0, column=0, padx=5, pady=5, sticky="w")
 
+        entry_datatable_key = ttk.Entry(aes_key_frame, width=50)
+        entry_datatable_key.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
         entry_datatable_key.insert(0, config.config.datatable_key)
+
+        # Fumen Key
+        fumen_label = ttk.Label(aes_key_frame, text="Fumen Key:")
+        fumen_label.grid(row=1, column=0, padx=5, pady=5, sticky="w")
+
+        entry_fumen_key = ttk.Entry(aes_key_frame, width=50)
+        entry_fumen_key.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
         entry_fumen_key.insert(0, config.config.fumen_key)
 
-        # Create Submit Button
-        submit_button = tk.Button(config_window, text="Submit", command=submit_config)
-        submit_button.grid(row=3, column=0, columnspan=2, pady=5)
+        # Make the API key entries expand with the window
+        aes_key_frame.grid_columnconfigure(1, weight=1)
+
+        # Button frame at the bottom
+        button_frame = ttk.Frame(main_frame)
+        button_frame.grid(row=2, column=0, pady=(0, 10), sticky="e")
+
+        # Create Cancel Button
+        cancel_button = ttk.Button(
+            button_frame,
+            text="Cancel",
+            command=config_window.destroy
+        )
+        cancel_button.grid(row=0, column=0, padx=5)
+
+        # Create styled Submit Button
+        submit_button = ttk.Button(
+            button_frame,
+            text="Save Settings",
+            command=submit_config,
+            style="Accent.TButton"  # This requires setting up the style
+        )
+        submit_button.grid(row=0, column=1, padx=5)
+
+        # Optional: Create and configure a custom style for the accent button
+        style = ttk.Style()
+        if style.theme_use() == 'default':  # Only do this for default theme
+            style.configure(
+                "Accent.TButton",
+                background="#007bff",
+                foreground="white",
+                padding=(10, 5)
+            )
+
+        # Focus the window
+        config_window.focus_force()
+        entry_datatable_key.focus()
+
+        # Center the window on screen
+        config_window.update_idletasks()
+        width = config_window.winfo_width()
+        height = config_window.winfo_height()
+        x = (config_window.winfo_screenwidth() // 2) - (width // 2)
+        y = (config_window.winfo_screenheight() // 2) - (height // 2)
+        config_window.geometry(f'{width}x{height}+{x}+{y}')
 
     def save_song(self):
-        #Music order will always be up-to-date so we don't have to save that here
-        #Same goes for wordlist vars asides current language
+        # Music order will always be up-to-date so we don't have to save that here
+        # Same goes for wordlist vars asides current language
 
         if self.song_info.uniqueId != self.unique_id_var.get():
             if self.check_and_confirm_uid(self.unique_id_var.get()):
@@ -1679,20 +1791,20 @@ class Program:
             else:
                 raise Exception("UniqueId already exists")
 
-
         self.song_info.songNameList[self.language_value.get()] = self.song_name_var.get(), self.song_name_font_var.get()
         self.song_info.songSubList[self.language_value.get()] = self.song_sub_var.get(), self.song_sub_font_var.get()
-        self.song_info.songDetailList[self.language_value.get()] = self.song_detail_var.get(), self.song_detail_font_var.get()
+        self.song_info.songDetailList[
+            self.language_value.get()] = self.song_detail_var.get(), self.song_detail_font_var.get()
 
         genre = self.genre_var.get()
         if genre in constants.GENRE_MAPPING:
             self.song_info.genreNo = constants.GENRE_MAPPING[genre]
         else:
             raise Exception("Invalid Genre")
-        
-        if self.song_info.musicOrder[constants.GENRE_MAPPING[genre]] == -1 and not all(x == -1 for x in self.song_info.musicOrder):
-            raise Exception("Music Order cannot be -1 for main genre")
 
+        if self.song_info.musicOrder[constants.GENRE_MAPPING[genre]] == -1 and not all(
+                x == -1 for x in self.song_info.musicOrder):
+            raise Exception("Music Order cannot be -1 for main genre")
 
         self.song_info.songFileName = self.song_filename_var.get()
         self.song_info.new = self.new_var.get()
@@ -1721,7 +1833,7 @@ class Program:
             self.song_info.fuusen_total[i] = self.fuusen_total_values[i].get()
             self.song_info.music_ai_section[i] = self.ai_sections_values[i].get()
         self.song_info.aiOniLevel11 = "o" if self.ai_hard_values[0].get() else ""
-        self.song_info.aiUraLevel11 = "o" if self.ai_hard_values[1].get() else "" #what the fuck namco
+        self.song_info.aiUraLevel11 = "o" if self.ai_hard_values[1].get() else ""  # what the fuck namco
         self.datatable.set_song_info(self.song_info)
 
     def on_songid(self, event: tk.Event):
@@ -1732,7 +1844,6 @@ class Program:
         old_songid = self.current_songid
         new_songid = event.widget.get()
         self.load_song(old_songid, new_songid)
-
 
     def load_song(self, old_songid, songid):
         self.current_songid = songid
@@ -1749,21 +1860,22 @@ class Program:
             self.populate_ui()
             if self.initial:
                 self.initial = False
-                #self.enable_all_widgets(self.window)
+                # self.enable_all_widgets(self.window)
         except Exception as e:
             messagebox.showerror('Song Load Error', f'Song Load Error: {e}')
             self.current_songid = old_songid
             self.songid_entry.delete(0, tk.END)
             self.songid_entry.insert(0, old_songid)
-    
+
     def on_language_change(self, *args):
         self.song_info.songNameList[self.previous_language] = self.song_name_var.get(), self.song_name_font_var.get()
         self.song_info.songSubList[self.previous_language] = self.song_sub_var.get(), self.song_sub_font_var.get()
-        self.song_info.songDetailList[self.previous_language] = self.song_detail_var.get(), self.song_detail_font_var.get()
+        self.song_info.songDetailList[
+            self.previous_language] = self.song_detail_var.get(), self.song_detail_font_var.get()
         self.previous_language = self.language_value.get()
         self.poplate_wordlist_vars()
 
-    def on_decouple_duet_change(self, *args): 
+    def on_decouple_duet_change(self, *args):
         if self.decouple_duet_var.get():
             self.show_duet_checkbutton.config(state="active")
         else:
@@ -1772,30 +1884,32 @@ class Program:
 
     def change_duet_label(self, duet):
         for i in range(5):
-            self.shinuchi_labels[i].config(text = "Shinuchi Duet:" if duet else "Shinuchi:")
-            self.shinuchi_score_labels[i].config(text = "Shinuchi Score Duet:" if duet else "Shinuchi Score:")
+            self.shinuchi_labels[i].config(text="Shinuchi Duet:" if duet else "Shinuchi:")
+            self.shinuchi_score_labels[i].config(text="Shinuchi Score Duet:" if duet else "Shinuchi Score:")
+
     def on_duet_change(self, *args):
-        if self.duet_change_ignore_flag: return #Ignore when data_load sets duet to false
+        if self.duet_change_ignore_flag: return  # Ignore when data_load sets duet to false
         duet = self.show_duet_var.get()
         for i in range(5):
             self.change_duet_label(duet)
             if duet:
-                #Normal -> Duet
+                # Normal -> Duet
                 self.song_info.shinuti[i] = self.shinuchi_values[i].get()
                 self.shinuchi_values[i].set(self.song_info.shinuti_duet[i])
                 self.song_info.shinuti_score[i] = self.shinuchi_score_values[i].get()
                 self.shinuchi_score_values[i].set(self.song_info.shinuti_score_duet[i])
             else:
-                #Duet -> Normal
+                # Duet -> Normal
                 self.song_info.shinuti_duet[i] = self.shinuchi_values[i].get()
                 self.shinuchi_values[i].set(self.song_info.shinuti[i])
                 self.song_info.shinuti_score_duet[i] = self.shinuchi_score_values[i].get()
                 self.shinuchi_score_values[i].set(self.song_info.shinuti_score[i])
-                
+
     def on_music_order_submit(self):
         for i, display in enumerate(self.music_order_genre_display_var):
             if display.get():
-                self.song_info.musicOrder[i] = self.music_order_genre_order_var[i].get(), self.music_order_genre_close_disp_type_var[i].get()
+                self.song_info.musicOrder[i] = self.music_order_genre_order_var[i].get(), \
+                self.music_order_genre_close_disp_type_var[i].get()
             else:
                 self.song_info.musicOrder[i] = -1, 0
         self.music_order_window.destroy()
@@ -1805,14 +1919,17 @@ class Program:
             self.song_info = self.datatable.get_song_info(self.current_songid)
 
         self.enable_all_widgets(self.window)
-        self.duet_change_ignore_flag = True #Brain cancer 2000
+        self.duet_change_ignore_flag = True  # Brain cancer 2000
         self.show_duet_var.set(False)
         self.change_duet_label(False)
         self.duet_change_ignore_flag = False
-        self.decouple_duet_var.set(any(self.song_info.shinuti[i] != self.song_info.shinuti_duet[i] for i in range(5)) or any(self.song_info.shinuti_score[i] != self.song_info.shinuti_score_duet[i] for i in range(5)))
+        self.decouple_duet_var.set(
+            any(self.song_info.shinuti[i] != self.song_info.shinuti_duet[i] for i in range(5)) or any(
+                self.song_info.shinuti_score[i] != self.song_info.shinuti_score_duet[i] for i in range(5)))
         self.poplate_wordlist_vars()
         self.unique_id_var.set(self.song_info.uniqueId)
-        self.genre_var.set(constants.GENRE_NAME_MAP[self.song_info.genreNo]) #Do not question this line of code (getting key given value)
+        self.genre_var.set(constants.GENRE_NAME_MAP[
+                               self.song_info.genreNo])  # Do not question this line of code (getting key given value)
         self.song_filename_var.set(self.song_info.songFileName)
         self.new_var.set(self.song_info.new)
         self.papamama_var.set(self.song_info.papamama)
@@ -1831,7 +1948,7 @@ class Program:
             self.ai_sections_values[i].set(self.song_info.music_ai_section[i])
 
         self.ai_hard_values[0].set(self.song_info.aiOniLevel11 == "o")
-        self.ai_hard_values[1].set(self.song_info.aiUraLevel11 == "o")     
+        self.ai_hard_values[1].set(self.song_info.aiUraLevel11 == "o")
 
     def poplate_wordlist_vars(self):
         self.song_name_var.set(self.song_info.songNameList[self.language_value.get()][0])
@@ -1852,7 +1969,6 @@ class Program:
         window.attributes('-toolwindow', True)
         window.resizable(False, False)
 
-
         # Main frame
         main_frame = ttk.Frame(window, padding="10")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
@@ -1863,7 +1979,16 @@ class Program:
         # Variables to store values
         enabled_vars = []
         renda_vars = []
+        renda_count_vars = []
         shinuti_vars = []
+
+        # confirm if renda time is a float
+        for v in self.renda_time_values:
+            try:
+                float(v.get())
+            except ValueError:
+                messagebox.showerror("Recalculate Shinuchi Score", f"Invalid renda time {v}", parent=window)
+                return
 
         # Create columns for each difficulty
         for col, diff in enumerate(difficulties):
@@ -1871,22 +1996,103 @@ class Program:
             frame = ttk.LabelFrame(main_frame, text=diff, padding="5")
             frame.grid(row=0, column=col, padx=5, pady=5, sticky=(tk.W, tk.E, tk.N, tk.S))
 
-            # Enable/Disable checkbox
+            def make_validate_float():
+                def validate_float(value):
+                    if value == "":
+                        return True
+                    try:
+                        float(value)
+                        return True
+                    except ValueError:
+                        return False
+
+                return validate_float
+
+            def make_update_count(col_num):
+                def update_count(event):
+                    if not validate_float(renda_vars[col_num].get()):
+                        return
+                    try:
+                        speed = float(renda_vars[col_num].get())
+                        time = float(self.renda_time_values[col_num].get())
+                        count = speed * time
+                        renda_count_vars[col_num].set(str(round(count)))
+                    except ValueError:
+                        pass
+
+                return update_count
+
+            def make_update_speed(col_num):
+                def update_speed(event):
+                    if not validate_float(renda_count_vars[col_num].get()):
+                        return
+                    try:
+                        count = float(renda_count_vars[col_num].get())
+                        time = float(self.renda_time_values[col_num].get())
+                        if time != 0:  # Prevent division by zero
+                            renda_vars[col_num].set(str(count / time))
+                    except ValueError:
+                        pass
+
+                return update_speed
+
+            def make_toggle_fields(col_num, entries):
+                def toggle_fields():
+                    state = 'normal' if enabled_vars[col_num].get() else 'disabled'
+                    for entry in entries:
+                        entry.config(state=state)
+
+                return toggle_fields
+
+            validate_float = make_validate_float()
+            update_count = make_update_count(col)
+            update_speed = make_update_speed(col)
+
+            # Configure column weight to make it expandable
+            frame.columnconfigure(0, weight=1)
+
+            # Required Renda Speed
+            speed_label = ttk.Label(frame, text="Required Renda Speed:")
+            speed_label.grid(row=1, column=0, padx=5, pady=2, sticky=tk.W)
+            renda_vars.append(tk.StringVar(value=str(config.config.default_required_renda_speed)))
+            renda_entry = ttk.Entry(frame, textvariable=renda_vars[col])
+            renda_entry.grid(row=2, column=0, padx=5, pady=2, sticky=(tk.W, tk.E))
+            renda_entry.bind('<Return>', update_count)
+            renda_entry.bind('<FocusOut>', update_count)
+
+            # Required Renda Count
+            count_label = ttk.Label(frame, text="Required Renda Count:")
+            count_label.grid(row=3, column=0, padx=5, pady=2, sticky=tk.W)
+            renda_count_vars.append(tk.StringVar(value=str(
+                round(config.config.default_required_renda_speed * float(self.renda_time_values[col].get())))))
+            renda_count_entry = ttk.Entry(frame, textvariable=renda_count_vars[col])
+            renda_count_entry.grid(row=4, column=0, padx=5, pady=2, sticky=(tk.W, tk.E))
+            renda_count_entry.bind('<Return>', update_speed)
+            renda_count_entry.bind('<FocusOut>', update_speed)
+
+            # Shinuti
+            shinuti_label = ttk.Label(frame, text="Shinuchi:")
+            shinuti_label.grid(row=5, column=0, padx=5, pady=2, sticky=tk.W)
+            shinuti_vars.append(tk.StringVar(value="0"))
+            shinuti_entry = ttk.Entry(frame, textvariable=shinuti_vars[col])
+            shinuti_entry.grid(row=6, column=0, padx=5, pady=2, sticky=(tk.W, tk.E))
+
+            # Register validation command
+            vcmd = frame.register(validate_float)
+            renda_entry.config(validate='key', validatecommand=(vcmd, '%P'))
+            renda_count_entry.config(validate='key', validatecommand=(vcmd, '%P'))
+
+            # Create list of entries to enable/disable
+            entries = [renda_entry, renda_count_entry, shinuti_entry]
+
+            # Enable/Disable checkbox with toggle functionality
             enabled_vars.append(tk.BooleanVar(value=self.star_values[col].get() != 0))
-            check = ttk.Checkbutton(frame, text="Enable", variable=enabled_vars[col])
+            toggle_fields = make_toggle_fields(col, entries)
+            check = ttk.Checkbutton(frame, text="Enable", variable=enabled_vars[col], command=toggle_fields)
             check.grid(row=0, column=0, padx=5, pady=2, sticky=tk.W)
 
-            # Required Renda Speed entry
-            ttk.Label(frame, text="Required Renda Speed:").grid(row=1, column=0, padx=5, pady=2, sticky=tk.W)
-            renda_vars.append(tk.StringVar(value=str(config.config.default_required_renda_speed)))
-            renda_entry = ttk.Entry(frame, width=10, textvariable=renda_vars[col])
-            renda_entry.grid(row=2, column=0, padx=5, pady=2)
-
-            # Shinuti entry
-            ttk.Label(frame, text="Shinuchi:").grid(row=3, column=0, padx=5, pady=2, sticky=tk.W)
-            shinuti_vars.append(tk.StringVar(value="0"))
-            shinuti_entry = ttk.Entry(frame, width=10, textvariable=shinuti_vars[col])
-            shinuti_entry.grid(row=4, column=0, padx=5, pady=2)
+            # Initial state
+            toggle_fields()
 
         # Hint label
         hint_label = ttk.Label(main_frame,
@@ -1894,12 +2100,16 @@ class Program:
         hint_label.grid(row=1, column=0, columnspan=5, pady=(2, 0), sticky=tk.W)
 
         def handle_recalculate():
+            recalculated_shinuti = {}
+            recalculated_shinuti_score = {}
+
             for i in range(5):
                 if not enabled_vars[i].get(): continue
                 try:
                     required_renda_speed = float(renda_vars[i].get())
                 except ValueError:
-                    messagebox.showerror("Recalculate Shinuchi Score", f"Renda speed {renda_vars[i].get()} is not valid")
+                    messagebox.showerror("Recalculate Shinuchi Score",
+                                         f"Renda speed {renda_vars[i].get()} is not valid")
                     return
                 try:
                     shinuti = int(shinuti_vars[i].get())
@@ -1908,17 +2118,142 @@ class Program:
                                          f"Shinuchi {shinuti_vars[i].get()} is not valid")
                     return
 
-                recalculated_shinuti, recalculated_shinuti_score = parse_tja.calculate_shinuti_and_shinuti_score(
+                recalculated_shinuti_val, recalculated_shinuti_score_val = parse_tja.calculate_shinuti_and_shinuti_score(
                     roll_duration_s=self.song_info.renda_time[i],
-                    impoppable_balloon_s=0, #This function assumes its 0, if it's not zero use the re-calculate everything feature
+                    impoppable_balloon_s=0,
+                    # This function assumes its 0, if it's not zero use the re-calculate everything feature
                     poppable_balloon_count=self.song_info.fuusen_total[i],
                     onpu_num=self.song_info.onpu_num[i],
                     required_renda_speed=required_renda_speed,
                     shinuti=shinuti
                 )
-                self.shinuchi_values[i].set(recalculated_shinuti)
-                self.shinuchi_score_values[i].set(recalculated_shinuti_score)
-            window.destroy()
+                recalculated_shinuti[i] = recalculated_shinuti_val
+                recalculated_shinuti_score[i] = recalculated_shinuti_score_val
+
+            comparison_window = tk.Toplevel()
+            comparison_window.grab_set()
+            comparison_window.focus_force()
+            comparison_window.title("Compare Values")
+            comparison_window.attributes('-toolwindow', True)
+            comparison_window.resizable(False, False)
+
+            # Main frame
+            main_frame = ttk.Frame(comparison_window, padding="10")
+            main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+
+            # Get enabled difficulties
+            difficulties_to_show = []
+            for i in range(5):
+                if enabled_vars[i].get():
+                    difficulties_to_show.append((i, constants.DIFFICULTIES[i]))
+
+            old_values = {diff_name: {} for _, diff_name in difficulties_to_show}
+            new_values = {diff_name: {} for _, diff_name in difficulties_to_show}
+
+            # Headers - for each difficulty, we need two columns (old and new)
+            current_col = 1
+            for _, diff_name in difficulties_to_show:
+                # Difficulty header spanning two columns
+                ttk.Label(main_frame, text=diff_name, font=("", 10, "bold")).grid(
+                    row=0, column=current_col, columnspan=2, pady=(0, 5))
+
+                # Old/New subheaders
+                ttk.Label(main_frame, text="Old", font=("", 9)).grid(
+                    row=1, column=current_col, padx=5, pady=(0, 5))
+                ttk.Label(main_frame, text="New", font=("", 9)).grid(
+                    row=1, column=current_col + 1, padx=5, pady=(0, 5))
+
+                current_col += 2
+
+            # Create rows for Shinuchi and Shinuchi Score
+            # Shinuchi row
+            ttk.Label(main_frame, text="Shinuchi:").grid(
+                row=2, column=0, sticky=tk.E, padx=(0, 5), pady=2)
+
+            current_col = 1
+            for diff_i, diff_name in difficulties_to_show:
+                # Old value (readonly)
+                old_values[diff_name]['shinuti'] = tk.StringVar(value=str(getattr(self.song_info, 'shinuti')[diff_i]))
+                tk.Entry(main_frame, textvariable=old_values[diff_name]['shinuti'],
+                         state="readonly", width=15).grid(
+                    row=2, column=current_col, padx=5, pady=2)
+
+                # New value (editable)
+                new_values[diff_name]['shinuti'] = tk.StringVar(value=str(recalculated_shinuti[diff_i]))
+                tk.Entry(main_frame, textvariable=new_values[diff_name]['shinuti'],
+                         width=15).grid(
+                    row=2, column=current_col + 1, padx=5, pady=2)
+
+                current_col += 2
+
+            # Shinuchi Score row
+            ttk.Label(main_frame, text="Shinuchi Score:").grid(
+                row=3, column=0, sticky=tk.E, padx=(0, 5), pady=2)
+
+            current_col = 1
+            for diff_i, diff_name in difficulties_to_show:
+                # Old value (readonly)
+                old_values[diff_name]['shinuti_score'] = tk.StringVar(
+                    value=str(getattr(self.song_info, 'shinuti_score')[diff_i]))
+                tk.Entry(main_frame, textvariable=old_values[diff_name]['shinuti_score'],
+                         state="readonly", width=15).grid(
+                    row=3, column=current_col, padx=5, pady=2)
+
+                # New value (editable)
+                new_values[diff_name]['shinuti_score'] = tk.StringVar(value=str(recalculated_shinuti_score[diff_i]))
+                tk.Entry(main_frame, textvariable=new_values[diff_name]['shinuti_score'],
+                         width=15).grid(
+                    row=3, column=current_col + 1, padx=5, pady=2)
+
+                current_col += 2
+
+            def handle_apply():
+                for _, diff_name in difficulties_to_show:
+                    try:
+                        int(new_values[diff_name]['shinuti'].get())
+                    except ValueError:
+                        messagebox.showerror("Recalculate Shinuchi", f"Shinuchi {new_values[diff_name]['shinuti'].get()} is not valid", parent=comparison_window)
+                        return
+                    try:
+                        int(new_values[diff_name]['shinuti_score'].get())
+                    except ValueError:
+                        messagebox.showerror("Recalculate Shinuchi", f"Shinuchi Score {new_values[diff_name]['shinuti_score'].get()} is not valid", parent=comparison_window)
+                        return
+
+                for i, diff_name in difficulties_to_show:
+                    self.shinuchi_values[i].set(int(new_values[diff_name]['shinuti'].get()))
+                    self.shinuchi_score_values[i].set(int(new_values[diff_name]['shinuti_score'].get()))
+                comparison_window.destroy()
+                window.destroy()
+
+            def handle_cancel():
+                comparison_window.destroy()
+
+            # Button frame
+            button_frame = ttk.Frame(main_frame)
+            button_frame.grid(row=4, column=0, columnspan=len(difficulties_to_show) * 2 + 1,
+                              pady=(10, 0), sticky=tk.E)
+
+            # Buttons
+            ttk.Button(button_frame, text="Cancel", command=handle_cancel).pack(side=tk.LEFT, padx=(0, 5))
+            ttk.Button(button_frame, text="Apply", command=handle_apply).pack(side=tk.LEFT)
+
+            # Configure grid weights for proper alignment
+            for i in range(len(difficulties_to_show) * 2 + 1):
+                main_frame.columnconfigure(i, weight=1)
+
+            # Button frame
+            button_frame = ttk.Frame(main_frame)
+            button_frame.grid(row=4, column=0, columnspan=len(difficulties_to_show) * 2 + 1,
+                              pady=(10, 0), sticky=tk.E)
+
+            # Buttons
+            ttk.Button(button_frame, text="Cancel", command=handle_cancel).pack(side=tk.LEFT, padx=(0, 5))
+            ttk.Button(button_frame, text="Apply", command=handle_apply).pack(side=tk.LEFT)
+
+            # Configure grid weights for proper alignment
+            for i in range(len(difficulties_to_show) * 2 + 1):
+                main_frame.columnconfigure(i, weight=1)
 
         def handle_cancel():
             window.destroy()
@@ -1928,11 +2263,20 @@ class Program:
         button_frame.grid(row=2, column=0, columnspan=5, pady=(5, 5), sticky=tk.E)
 
         # Recalculate and Cancel buttons
-        ttk.Button(button_frame, text="Recalculate", command=handle_recalculate).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(button_frame, text="Cancel", command=handle_cancel).pack(side=tk.LEFT)
+        ttk.Button(button_frame, text="Cancel", command=handle_cancel).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(button_frame, text="Recalculate", command=handle_recalculate).pack(side=tk.LEFT)
+
 
     def recalculate_all(self, *args):
         if not self.current_songid: return
+
+        # confirm if renda time is a float
+        for v in self.renda_time_values:
+            try:
+                float(v.get())
+            except ValueError:
+                messagebox.showerror("Recalculate Shinuchi Score", f"Invalid renda time {v}", parent=window)
+                return
 
         # Create a new Toplevel window
         window = tk.Toplevel()
@@ -1942,14 +2286,9 @@ class Program:
         window.attributes('-toolwindow', True)
         window.resizable(False, False)
 
-
-        # Main frame
-        main_frame = ttk.Frame(window, padding="10")
-        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-
-        # File selection frame
-        file_frame = ttk.Frame(main_frame)
-        file_frame.grid(row=0, column=0, columnspan=5, pady=(0, 10), sticky=(tk.W, tk.E))
+        # File selection frame (separate from main frame)
+        file_frame = ttk.Frame(window, padding="10")
+        file_frame.grid(row=0, column=0, sticky=(tk.W, tk.E))
 
         ttk.Label(file_frame, text="Tja File:").pack(side=tk.LEFT)
         file_path_var = tk.StringVar()
@@ -1967,42 +2306,127 @@ class Program:
         browse_button = ttk.Button(file_frame, text="Browse...", command=select_file)
         browse_button.pack(side=tk.LEFT)
 
+        # Main frame (now in row 1)
+        main_frame = ttk.Frame(window, padding="10")
+        main_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+
         # Difficulty levels
         difficulties = ["Easy", "Normal", "Hard", "Oni", "Ura"]
 
         # Variables to store values
         enabled_vars = []
         renda_vars = []
+        renda_count_vars = []
         shinuti_vars = []
 
         # Create columns for each difficulty
         for col, diff in enumerate(difficulties):
             # Create LabelFrame for each difficulty
             frame = ttk.LabelFrame(main_frame, text=diff, padding="5")
-            frame.grid(row=1, column=col, padx=5, pady=5, sticky=(tk.W, tk.E, tk.N, tk.S))
+            frame.grid(row=0, column=col, padx=5, pady=5, sticky=(tk.W, tk.E, tk.N, tk.S))
 
-            # Enable/Disable checkbox
+            def make_validate_float():
+                def validate_float(value):
+                    if value == "":
+                        return True
+                    try:
+                        float(value)
+                        return True
+                    except ValueError:
+                        return False
+
+                return validate_float
+
+            def make_update_count(col_num):
+                def update_count(event):
+                    if not validate_float(renda_vars[col_num].get()):
+                        return
+                    try:
+                        speed = float(renda_vars[col_num].get())
+                        time = float(self.renda_time_values[col_num].get())
+                        count = speed * time
+                        renda_count_vars[col_num].set(str(round(count)))
+                    except ValueError:
+                        pass
+
+                return update_count
+
+            def make_update_speed(col_num):
+                def update_speed(event):
+                    if not validate_float(renda_count_vars[col_num].get()):
+                        return
+                    try:
+                        count = float(renda_count_vars[col_num].get())
+                        time = float(self.renda_time_values[col_num].get())
+                        if time != 0:  # Prevent division by zero
+                            renda_vars[col_num].set(str(count / time))
+                    except ValueError:
+                        pass
+
+                return update_speed
+
+            def make_toggle_fields(col_num, entries):
+                def toggle_fields():
+                    state = 'normal' if enabled_vars[col_num].get() else 'disabled'
+                    for entry in entries:
+                        entry.config(state=state)
+
+                return toggle_fields
+
+            validate_float = make_validate_float()
+            update_count = make_update_count(col)
+            update_speed = make_update_speed(col)
+
+            # Configure column weight to make it expandable
+            frame.columnconfigure(0, weight=1)
+
+            # Required Renda Speed
+            speed_label = ttk.Label(frame, text="Required Renda Speed:")
+            speed_label.grid(row=1, column=0, padx=5, pady=2, sticky=tk.W)
+            renda_vars.append(tk.StringVar(value=str(config.config.default_required_renda_speed)))
+            renda_entry = ttk.Entry(frame, textvariable=renda_vars[col])
+            renda_entry.grid(row=2, column=0, padx=5, pady=2, sticky=(tk.W, tk.E))
+            renda_entry.bind('<Return>', update_count)
+            renda_entry.bind('<FocusOut>', update_count)
+
+            # Required Renda Count
+            count_label = ttk.Label(frame, text="Required Renda Count:")
+            count_label.grid(row=3, column=0, padx=5, pady=2, sticky=tk.W)
+            renda_count_vars.append(tk.StringVar(value=str(
+                round(config.config.default_required_renda_speed * float(self.renda_time_values[col].get())))))
+            renda_count_entry = ttk.Entry(frame, textvariable=renda_count_vars[col])
+            renda_count_entry.grid(row=4, column=0, padx=5, pady=2, sticky=(tk.W, tk.E))
+            renda_count_entry.bind('<Return>', update_speed)
+            renda_count_entry.bind('<FocusOut>', update_speed)
+
+            # Shinuti
+            shinuti_label = ttk.Label(frame, text="Shinuchi:")
+            shinuti_label.grid(row=5, column=0, padx=5, pady=2, sticky=tk.W)
+            shinuti_vars.append(tk.StringVar(value="0"))
+            shinuti_entry = ttk.Entry(frame, textvariable=shinuti_vars[col])
+            shinuti_entry.grid(row=6, column=0, padx=5, pady=2, sticky=(tk.W, tk.E))
+
+            # Register validation command
+            vcmd = frame.register(validate_float)
+            renda_entry.config(validate='key', validatecommand=(vcmd, '%P'))
+            renda_count_entry.config(validate='key', validatecommand=(vcmd, '%P'))
+
+            # Create list of entries to enable/disable
+            entries = [renda_entry, renda_count_entry, shinuti_entry]
+
+            # Enable/Disable checkbox with toggle functionality
             enabled_vars.append(tk.BooleanVar(value=self.star_values[col].get() != 0))
-            check = ttk.Checkbutton(frame, text="Enable", variable=enabled_vars[col])
+            toggle_fields = make_toggle_fields(col, entries)
+            check = ttk.Checkbutton(frame, text="Enable", variable=enabled_vars[col], command=toggle_fields)
             check.grid(row=0, column=0, padx=5, pady=2, sticky=tk.W)
 
-            # Required Renda Speed entry
-            ttk.Label(frame, text="Required Renda Speed:").grid(row=1, column=0, padx=5, pady=2, sticky=tk.W)
-            renda_vars.append(tk.StringVar(value=str(config.config.default_required_renda_speed)))
-            renda_entry = ttk.Entry(frame, width=10, textvariable=renda_vars[col])
-            renda_entry.grid(row=2, column=0, padx=5, pady=2)
-
-            # Shinuti entry
-            ttk.Label(frame, text="Shinuchi:").grid(row=3, column=0, padx=5, pady=2, sticky=tk.W)
-            shinuti_vars.append(tk.StringVar(value="0"))
-            shinuti_entry = ttk.Entry(frame, width=10, textvariable=shinuti_vars[col])
-            shinuti_entry.grid(row=4, column=0, padx=5, pady=2)
+            # Initial state
+            toggle_fields()
 
         # Hint label
         hint_label = ttk.Label(main_frame,
                                text="Hint: leave the shinuchi field as 0 to recalculate shinuchi along with shinuchi score")
         hint_label.grid(row=2, column=0, columnspan=5, pady=(2, 0), sticky=tk.W)
-
 
         def handle_recalculate():
             required_renda_speeds = []
@@ -2011,29 +2435,139 @@ class Program:
                 try:
                     required_renda_speeds.append(float(renda_vars[i].get()))
                 except ValueError:
-                    messagebox.showerror("Recalculate Shinuchi Score", f"Renda speed {renda_vars[i].get()} is not valid")
+                    messagebox.showerror("Recalculate Shinuchi Score", f"Renda speed {renda_vars[i].get()} is not valid",
+                                         parent=window)
                     return
                 try:
                     shinuti_values.append(int(shinuti_vars[i].get()))
                 except ValueError:
                     messagebox.showerror("Recalculate Shinuchi Score",
-                                         f"Shinuchi {shinuti_vars[i].get()} is not valid")
+                                         f"Shinuchi {shinuti_vars[i].get()} is not valid", parent=window)
                     return
 
+            if file_path_var.get() == "":
+                messagebox.showerror("Recalculate Shinuchi Score",
+                                     f"Please select a TJA file", parent=window)
+                return
             try:
                 parsed_data = parse_tja.parse_and_get_data(file_path_var.get(), shinuti_values, required_renda_speeds)
             except Exception as e:
                 messagebox.showerror("Recalculate All", f"Parse TJA Error: {e}")
                 return
 
+            comparison_window = tk.Toplevel()
+            comparison_window.grab_set()
+            comparison_window.focus_force()
+            comparison_window.title("Compare Values")
+            comparison_window.attributes('-toolwindow', True)
+            comparison_window.resizable(False, False)
+
+            # Main frame
+            main_frame = ttk.Frame(comparison_window, padding="10")
+            main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+
+            # Row configuration
+            rows = [
+                ("Shinuchi:", "shinuti"),
+                ("Shinuchi Score:", "shinuti_score"),
+                ("Onpu Number:", "onpu_num"),
+                ("Renda Time:", "renda_time"),
+                ("Fuusen Total:", "fuusen_total")
+            ]
+
+            # Create a dictionary to store the row checkboxes
+            row_enabled_vars = {key: tk.BooleanVar(value=True) for _, key in rows}
+
+            difficulties_to_show = []
             for i in range(5):
-                if not enabled_vars[i].get(): continue
-                self.shinuchi_values[i].set(parsed_data.shinuti[i])
-                self.shinuchi_score_values[i].set(parsed_data.shinuti_score[i])
-                self.onpu_num_values[i].set(parsed_data.onpu_num[i])
-                self.renda_time_values[i].set(str(parsed_data.renda_time[i]))
-                self.fuusen_total_values[i].set(parsed_data.fuusen_total[i])
-            window.destroy()
+                if enabled_vars[i].get():
+                    difficulties_to_show.append((i, constants.DIFFICULTIES[i]))
+            old_values = {diff_name: {} for _, diff_name in difficulties_to_show}
+            new_values = {diff_name: {} for _, diff_name in difficulties_to_show}
+
+            # Headers - for each difficulty, we need two columns (old and new)
+            current_col = 2  # Start from column 2 to accommodate checkbox column
+            for _, diff_name in difficulties_to_show:
+                # Difficulty header spanning two columns
+                ttk.Label(main_frame, text=diff_name, font=("", 10, "bold")).grid(
+                    row=0, column=current_col, columnspan=2, pady=(0, 5))
+
+                # Old/New subheaders
+                ttk.Label(main_frame, text="Old", font=("", 9)).grid(
+                    row=1, column=current_col, padx=5, pady=(0, 5))
+                ttk.Label(main_frame, text="New", font=("", 9)).grid(
+                    row=1, column=current_col + 1, padx=5, pady=(0, 5))
+
+                current_col += 2
+
+            # Calculate total width of the window
+            total_columns = len(difficulties_to_show) * 2 + 2  # +2 for label and checkbox columns
+            entry_width = max(15, int((comparison_window.winfo_screenwidth() * 0.8) / (
+                        total_columns * 8)))  # Approximate char width
+
+            # Create rows
+            for row_idx, (label_text, key) in enumerate(rows, start=2):
+                # Checkbox
+                ttk.Checkbutton(main_frame, variable=row_enabled_vars[key]).grid(
+                    row=row_idx, column=0, sticky=tk.E, padx=2, pady=2)
+
+                # Row label
+                ttk.Label(main_frame, text=label_text).grid(
+                    row=row_idx, column=1, sticky=tk.W, padx=5, pady=2)
+
+                # Create value entries for each difficulty
+                current_col = 2
+                for diff_i, diff_name in difficulties_to_show:
+                    # Old value (readonly)
+                    old_values[diff_name][key] = tk.StringVar(value=str(getattr(self.song_info, key)[diff_i]))
+                    tk.Entry(main_frame, textvariable=old_values[diff_name][key],
+                             state="readonly", width=entry_width).grid(
+                        row=row_idx, column=current_col, padx=5, pady=2, sticky=(tk.E, tk.W))
+
+                    # New value (editable)
+                    new_values[diff_name][key] = tk.StringVar(value=str(getattr(parsed_data, key)[diff_i]))
+                    tk.Entry(main_frame, textvariable=new_values[diff_name][key],
+                             width=entry_width).grid(
+                        row=row_idx, column=current_col + 1, padx=5, pady=2, sticky=(tk.E, tk.W))
+
+                    current_col += 2
+
+            # Configure column weights to make them expand uniformly
+            for i in range(total_columns):
+                main_frame.grid_columnconfigure(i, weight=1)
+
+            def handle_apply():
+                for i in range(5):
+                    if not enabled_vars[i].get(): continue
+                    diff_name = constants.DIFFICULTIES[i]
+
+                    # Only update if the row's checkbox is checked
+                    if row_enabled_vars['shinuti'].get():
+                        self.shinuchi_values[i].set(new_values[diff_name]['shinuti'].get())
+                    if row_enabled_vars['shinuti_score'].get():
+                        self.shinuchi_score_values[i].set(new_values[diff_name]['shinuti_score'].get())
+                    if row_enabled_vars['onpu_num'].get():
+                        self.onpu_num_values[i].set(new_values[diff_name]['onpu_num'].get())
+                    if row_enabled_vars['renda_time'].get():
+                        self.renda_time_values[i].set(new_values[diff_name]['renda_time'].get())
+                    if row_enabled_vars['fuusen_total'].get():
+                        self.fuusen_total_values[i].set(new_values[diff_name]['fuusen_total'].get())
+
+                comparison_window.destroy()
+                window.destroy()
+
+            # Button frame
+            button_frame = ttk.Frame(comparison_window)
+            button_frame.grid(row=1, column=0, sticky=tk.E, padx=10, pady=10)
+
+            # Add buttons to the frame
+            ttk.Button(button_frame, text="Cancel", command=comparison_window.destroy).grid(row=0, column=0)
+            ttk.Button(button_frame, text="Apply", command=handle_apply).grid(row=0, column=1, padx=(0, 5))
+
+            # Configure grid weights for proper alignment
+            for i in range(len(difficulties_to_show) * 2 + 1):
+                main_frame.columnconfigure(i, weight=1)
+
 
         def handle_cancel():
             window.destroy()
@@ -2043,11 +2577,13 @@ class Program:
         button_frame.grid(row=2, column=0, columnspan=5, pady=(5, 5), sticky=tk.E)
 
         # Recalculate and Cancel buttons
-        ttk.Button(button_frame, text="Recalculate", command=handle_recalculate).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(button_frame, text="Cancel", command=handle_cancel).pack(side=tk.LEFT)
+        ttk.Button(button_frame, text="Cancel", command=handle_cancel).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(button_frame, text="Recalculate", command=handle_recalculate).pack(side=tk.LEFT)
+
 
     def star_on_enter(self, event):
         self.star_label.configure(fg="blue")
+
 
     def star_on_leave(self, event):
         self.star_label.configure(fg="black")

@@ -7,6 +7,7 @@ class Config:
     game_files_out_dir: str
     default_required_renda_speed: float
     dancers: dict
+    auto_close_search: bool
 
     def __init__(self) -> None:
         # Define the directory and file paths
@@ -22,6 +23,7 @@ class Config:
             "fumenKey": "4434423946383537303842433443383030333843444132343339373531353830",
             "gameFilesOutDir": "",
             "defaultRequiredRendaSpeed": 17,
+            "autoCloseSearch": True,
             "dancers": {
                 "001_miku": {
                     "ensoPartsID1": 1,
@@ -353,6 +355,10 @@ class Config:
             d['defaultRequiredRendaSpeed'] = default_config['defaultRequiredRendaSpeed']
             updated = True
 
+        if 'autoCloseSearch' not in d:
+            d['autoCloseSearch'] = default_config['autoCloseSearch']
+            updated = True
+
         if 'dancers' not in d:
             d['dancers'] = default_config['dancers']
             updated = True
@@ -367,6 +373,7 @@ class Config:
         self.fumen_key = d['fumenKey']
         self.game_files_out_dir = d['gameFilesOutDir']
         self.default_required_renda_speed = d['defaultRequiredRendaSpeed']
+        self.auto_close_search = d['autoCloseSearch']
         self.dancers = d['dancers']
 
     def update_keys(self, datatable_key: str, fumen_key: str) -> None:
@@ -384,12 +391,17 @@ class Config:
         self.default_required_renda_speed = default_required_renda_speed
         self.write_back_to_json()
 
+    def update_auto_close_search(self, auto_close_search: bool):
+        self.auto_close_search = auto_close_search
+        self.write_back_to_json()
+
     def write_back_to_json(self):
         # Update the configuration dictionary
         updated_config = {
             "datatableKey": self.datatable_key,
             "fumenKey": self.fumen_key,
             "gameFilesOutDir": self.game_files_out_dir,
+            "autoCloseSearch": self.auto_close_search,
             "dancers": self.dancers
         }
 
