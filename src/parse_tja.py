@@ -611,7 +611,7 @@ def parse_and_get_data(tja_file: str, shinuti_override: List[int] = None, requir
             shinuti = shinuti_override[i]
         else:
             shinuti = 0
-        ret.shinuti[i], ret.shinuti_score[i] = calculate_shinuti_and_shinuti_score(ret.renda_time[i], impoppable_balloon_s, poppable_balloon_count, ret.onpu_num[i], required_renda_speed, shinuti=shinuti)
+        ret.shinuti[i], ret.shinuti_score[i], _ = calculate_shinuti_and_shinuti_score(ret.renda_time[i], impoppable_balloon_s, poppable_balloon_count, ret.onpu_num[i], required_renda_speed, shinuti=shinuti)
 
     return ret
 
@@ -625,4 +625,10 @@ def calculate_shinuti_and_shinuti_score(roll_duration_s: float, impoppable_ballo
     if shinuti == 0: shinuti = ceil((100_000.0 - 10 * (floor(required_renda_speed * roll_duration_int / 1000) + poppable_balloon_count)) / onpu_num) * 10
     tenjyou = shinuti * onpu_num + 100 * (floor(required_renda_speed * roll_duration / 1000) + poppable_balloon_count)
     shinuti_score = tenjyou + floor(required_renda_speed * roll_duration) * 100
-    return shinuti, shinuti_score
+    return shinuti, shinuti_score, tenjyou
+
+def calculate_tenjyou_and_shinuti_score_from_renda_count(shinuti: int, poppable_balloon_count: int, onpu_num: int, required_renda_count: int) -> tuple[int, int]:
+    tenjyou = shinuti * onpu_num + poppable_balloon_count * 100
+    shinuti_score = tenjyou + floor(required_renda_count) * 100
+    return tenjyou, shinuti_score
+

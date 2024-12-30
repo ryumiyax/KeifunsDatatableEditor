@@ -367,6 +367,12 @@ class Program:
         self.duet_frame = tk.Frame(self.difficulty_info_label_frame)
         self.duet_frame.grid(row=0, column=0)
 
+        ## VCMD functions
+        validate_float = make_validate_float()
+        validate_int = make_validate_int()
+        self.vcmd_float = self.difficulty_info_label_frame.register(validate_float)
+        self.vcmd_int = self.difficulty_info_label_frame.register(validate_int)
+
         self.decouple_duet_checkbutton = tk.Checkbutton(self.duet_frame, text="Decouple Duet Values",
                                                         variable=self.decouple_duet_var)
         self.decouple_duet_checkbutton.grid(row=0, column=0)
@@ -481,6 +487,14 @@ class Program:
                 self.ai_hard_checkbuttons.append(
                     tk.Checkbutton(self.ai_sections_frames[i], text="Hard", variable=self.ai_hard_values[i - 3]))
                 self.ai_hard_checkbuttons[i - 3].grid(row=0, column=3)
+
+            self.spike_on_spinboxes[i].config(validate='key', validatecommand=(self.vcmd_int, '%P'))
+            self.star_spinboxes[i].config(validate='key', validatecommand=(self.vcmd_int, '%P'))
+            self.shinuchi_spinboxes[i].config(validate='key', validatecommand=(self.vcmd_int, '%P'))
+            self.shinuchi_score_spinboxes[i].config(validate='key', validatecommand=(self.vcmd_int, '%P'))
+            self.onpu_num_spinboxes[i].config(validate='key', validatecommand=(self.vcmd_int, '%P'))
+            self.renda_time_entries[i].config(validate='key', validatecommand=(self.vcmd_float, '%P'))
+            self.fuusen_total_spinboxes[i].config(validate='key', validatecommand=(self.vcmd_int, '%P'))
 
             self.branch_spike_frames[i].grid(row=0, column=0)
             self.branch_checkbuttons[i].grid(row=0, column=0)
@@ -753,7 +767,7 @@ class Program:
                 # Create parent nodes for each genre first
                 for genre_id, genre_name in constants.GENRE_NAME_MAP.items():
                     genre_iid = f"genre_{genre_id}"
-                    tree.insert("", tk.END, iid=genre_iid, text=genre_name, values=("", "", "", ""),
+                    tree.insert("", tk.END, iid=genre_iid, text=genre_name, values=("", "", "", "", ""),
                                 tags=(str(genre_id)))
 
                 # Insert songs under their respective genre parents
@@ -762,7 +776,7 @@ class Program:
                     for song in songs:
                         values = (song.musicOrderIndex,
                                   "♦ " + song.title[langvar.get()] if song.new else song.title[langvar.get()],
-                                  # add star for main
+                                  song.sub[langvar.get()],
                                   song.id,
                                   song.uniqueId)
                         tree.insert(genre_iid, tk.END, values=values, tags=(str(genre)))
@@ -777,21 +791,11 @@ class Program:
                             current_values[0],  # musicOrderIndex
                             "♦ " + song.title[langvar.get()] if song.new else song.title[langvar.get()],
                             # add star for main
-                            current_values[2],  # id
-                            current_values[3]  # uniqueId
+                            song.sub[langvar.get()],
+                            current_values[3],  # id
+                            current_values[4]  # uniqueId
                         )
                         tree.item(item, values=new_values)
-
-        # search_frame = tk.Frame(musicorder_window)
-        #
-        # search_label = tk.Label(search_frame, text='Search:')
-        # search_label.grid(row=0, column=0, sticky="w")
-        #
-        # search_var.trace_add("write", perform_search)  # Bind the search function to changes in the entry
-        # search_bar = ttk.Entry(search_frame, textvariable=search_var, width=30)
-        # search_bar.grid(row=0, column=1, padx=10, pady=10)
-        #
-        # search_frame.grid(row=0, column=0)
 
         language_frame = tk.Frame(musicorder_window, pady=5)
         language_radiobuttons = list()
@@ -807,82 +811,107 @@ class Program:
         # Controls Functions
 
         def move_song_up():
-            selected_item = tree.selection()[0]  # Get selected item
-            if not tree.parent(selected_item):
-                return
-            parent = tree.parent(selected_item)  # Get genre parent
-
-            # Get index of selected item within its genre
-            genre_songs = tree.get_children(parent)
-            current_index = genre_songs.index(selected_item)
-
-            # Can't move if it's already at the top
-            if current_index == 0:
+            selected_items = tree.selection()  # Get all selected items
+            if not selected_items:
                 return
 
-            # Get current values and previous item
-            prev_item = genre_songs[current_index - 1]
+            # Sort selected items by their position (top to bottom) to maintain order
+            sorted_items = []
+            for item in selected_items:
+                if not tree.parent(item):  # Skip genre items
+                    continue
+                parent = tree.parent(item)
+                index = tree.get_children(parent).index(item)
+                sorted_items.append((parent, item, index))
 
-            # Move the item in the tree
-            tree.move(selected_item, parent, current_index - 1)
+            sorted_items.sort(key=lambda x: x[2])  # Sort by index
 
-            # Swap the music order values
-            current_values = tree.item(selected_item)['values']
-            prev_values = tree.item(prev_item)['values']
+            # Process each item from top to bottom
+            for parent, item, current_index in sorted_items:
+                if current_index == 0:  # Skip if already at top
+                    continue
 
-            # Update the values
-            tree.item(selected_item, values=(prev_values[0], current_values[1], current_values[2], current_values[3]))
-            tree.item(prev_item, values=(current_values[0], prev_values[1], prev_values[2], prev_values[3]))
+                genre_songs = tree.get_children(parent)
 
-            # Update the underlying data structure
-            genre_id = int(parent.split('_')[1])  # Get genre from parent ID
+                # Check if previous item is also selected (skip if it is)
+                prev_item = genre_songs[current_index - 1]
+                if prev_item in selected_items:
+                    continue
 
-            # Swap the actual songs in song_list
-            song_list[genre_id][current_index], song_list[genre_id][current_index - 1] = \
-                song_list[genre_id][current_index - 1], song_list[genre_id][current_index]
+                # Move the item in the tree
+                tree.move(item, parent, current_index - 1)
 
-            # Update their order indices
-            song_list[genre_id][current_index].musicOrderIndex = current_values[0]
-            song_list[genre_id][current_index - 1].musicOrderIndex = prev_values[0]
+                # Swap the music order values
+                current_values = tree.item(item)['values']
+                prev_values = tree.item(prev_item)['values']
+
+                # Update the values
+                tree.item(item, values=(
+                prev_values[0], current_values[1], current_values[2], current_values[3], current_values[4]))
+                tree.item(prev_item,
+                          values=(current_values[0], prev_values[1], prev_values[2], prev_values[3], prev_values[4]))
+
+                # Update the underlying data structure
+                genre_id = int(parent.split('_')[1])
+
+                # Swap the actual songs in song_list
+                song_list[genre_id][current_index], song_list[genre_id][current_index - 1] = \
+                    song_list[genre_id][current_index - 1], song_list[genre_id][current_index]
+
+                # Update their order indices
+                song_list[genre_id][current_index].musicOrderIndex = current_values[0]
+                song_list[genre_id][current_index - 1].musicOrderIndex = prev_values[0]
 
         def move_song_down():
-            selected_item = tree.selection()[0]  # Get selected item
-            if not tree.parent(selected_item):
-                return
-            parent = tree.parent(selected_item)  # Get genre parent
-
-            # Get index of selected item within its genre
-            genre_songs = tree.get_children(parent)
-            current_index = genre_songs.index(selected_item)
-
-            # Can't move if it's already at the bottom
-            if current_index >= len(genre_songs) - 1:
+            selected_items = tree.selection()  # Get all selected items
+            if not selected_items:
                 return
 
-            # Get current values and next item
-            next_item = genre_songs[current_index + 1]
+            # Sort selected items by their position (bottom to top) to maintain order
+            sorted_items = []
+            for item in selected_items:
+                if not tree.parent(item):  # Skip genre items
+                    continue
+                parent = tree.parent(item)
+                index = tree.get_children(parent).index(item)
+                sorted_items.append((parent, item, index))
 
-            # Move the item in the tree
-            tree.move(selected_item, parent, current_index + 1)
+            sorted_items.sort(key=lambda x: x[2], reverse=True)  # Sort by index in reverse
 
-            # Swap the music order values
-            current_values = tree.item(selected_item)['values']
-            next_values = tree.item(next_item)['values']
+            # Process each item from bottom to top
+            for parent, item, current_index in sorted_items:
+                genre_songs = tree.get_children(parent)
+                if current_index >= len(genre_songs) - 1:  # Skip if already at bottom
+                    continue
 
-            # Update the values
-            tree.item(selected_item, values=(next_values[0], current_values[1], current_values[2], current_values[3]))
-            tree.item(next_item, values=(current_values[0], next_values[1], next_values[2], next_values[3]))
+                # Check if next item is also selected (skip if it is)
+                next_item = genre_songs[current_index + 1]
+                if next_item in selected_items:
+                    continue
 
-            # Update the underlying data structure
-            genre_id = int(parent.split('_')[1])  # Get genre from parent ID
+                # Move the item in the tree
+                tree.move(item, parent, current_index + 1)
 
-            # Swap the actual songs in song_list
-            song_list[genre_id][current_index], song_list[genre_id][current_index + 1] = \
-                song_list[genre_id][current_index + 1], song_list[genre_id][current_index]
+                # Swap the music order values
+                current_values = tree.item(item)['values']
+                next_values = tree.item(next_item)['values']
 
-            # Update their order indices
-            song_list[genre_id][current_index].musicOrderIndex = next_values[0]
-            song_list[genre_id][current_index + 1].musicOrderIndex = current_values[0]
+                # Update the values
+                tree.item(item, values=(
+                next_values[0], current_values[1], current_values[2], current_values[3], current_values[4]))
+                tree.item(next_item,
+                          values=(current_values[0], next_values[1], next_values[2], next_values[3], next_values[4]))
+
+                # Update the underlying data structure
+                genre_id = int(parent.split('_')[1])
+
+                # Swap the actual songs in song_list
+                song_list[genre_id][current_index], song_list[genre_id][current_index + 1] = \
+                    song_list[genre_id][current_index + 1], song_list[genre_id][current_index]
+
+                # Update their order indices
+                song_list[genre_id][current_index].musicOrderIndex = next_values[0]
+                song_list[genre_id][current_index + 1].musicOrderIndex = current_values[0]
 
         # Initialize the loop variables
         move_up_loop = None
@@ -982,6 +1011,7 @@ class Program:
                 new_song.musicOrderIndex = selected_order
                 new_song.id = song_id
                 new_song.title = [x for (x, _) in song_info.songNameList]  # Use the actual song names
+                new_song.sub = [x for (x, _) in song_info.songSubList]
                 new_song.new = self.datatable.is_song_new(song_id)
                 new_song.uniqueId = song_info.uniqueId
 
@@ -990,8 +1020,12 @@ class Program:
 
                 # Add new song to tree with retrieved info
                 new_values = (
-                    selected_order, "♦ " + song_info.songNameList[langvar.get()][0] if new_song.new else
-                    song_info.songNameList[langvar.get()][0], song_id, str(song_info.uniqueId))
+                    selected_order,
+                    "♦ " + song_info.songNameList[langvar.get()][0] if new_song.new else
+                    song_info.songNameList[langvar.get()][0],
+                    song_info.songSubList[langvar.get()][0],
+                    song_id,
+                    str(song_info.uniqueId))
                 tree.insert(parent, tree.index(selected_item), values=new_values, tags=(str(genre_id)))
 
                 # Update orders for subsequent songs in both tree and song_list
@@ -1009,88 +1043,109 @@ class Program:
             submit_button.grid(row=1, column=1, pady=10)
 
         def remove_song():
-            selected_item = tree.selection()
-            if not selected_item:
+            selected_items = tree.selection()
+            if not selected_items:
                 messagebox.showwarning("Remove Song", "Please select a song to remove", parent=musicorder_window)
                 return
-            if not tree.parent(selected_item[0]):
+
+            # Filter out any genre (parent) items that might be selected
+            valid_items = [item for item in selected_items if tree.parent(item)]
+            if not valid_items:
                 return
 
-            selected_item = selected_item[0]
-            parent = tree.parent(selected_item)
-            genre_id = int(parent.split('_')[1])
+            # Confirm deletion with user
+            num_songs = len(valid_items)
+            if num_songs > 1:
+                if not messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete these {num_songs} songs?", parent=musicorder_window):
+                    return
 
-            # Get index of selected item and all genre songs
-            genre_songs = tree.get_children(parent)
-            current_index = genre_songs.index(selected_item)
+            # Group items by genre for proper index handling
+            genre_items = {}  # Dictionary to store {genre_id: [(item, index), ...]}
 
-            # Remove from tree
-            tree.delete(selected_item)
+            for item in valid_items:
+                parent = tree.parent(item)
+                genre_id = int(parent.split('_')[1])
+                genre_songs = tree.get_children(parent)
+                current_index = genre_songs.index(item)
 
-            # Remove from song_list
-            song_list[genre_id].pop(current_index)
+                if genre_id not in genre_items:
+                    genre_items[genre_id] = []
+                genre_items[genre_id].append((item, current_index))
 
-            # Update order for all subsequent songs in both tree and song_list
-            for i in range(current_index, len(genre_songs) - 1):  # -1 because we removed one
-                item = genre_songs[i + 1]  # +1 because current_index item is deleted
-                current_values = tree.item(item)['values']
-                # Decrease order by 1
-                new_values = tuple([current_values[0] - 1] + list(current_values[1:]))
-                tree.item(item, values=new_values)
-                # Update song_list order
-                song_list[genre_id][i].musicOrderIndex = current_values[0] - 1
+            # Process each genre separately
+            for genre_id, items in genre_items.items():
+                # Sort by index in reverse order to handle deletions from bottom to top
+                items.sort(key=lambda x: x[1], reverse=True)
+
+                for item, current_index in items:
+                    # Remove from tree
+                    tree.delete(item)
+
+                    # Remove from song_list
+                    song_list[genre_id].pop(current_index)
+
+                # Update order for remaining songs in this genre
+                genre_iid = f"genre_{genre_id}"
+                remaining_items = tree.get_children(genre_iid)
+
+                # Update indices for remaining songs
+                for i, item in enumerate(remaining_items):
+                    current_values = tree.item(item)['values']
+                    new_values = tuple([i + 1] + list(current_values[1:]))  # +1 because indices start at 1
+                    tree.item(item, values=new_values)
+                    song_list[genre_id][i].musicOrderIndex = i + 1
 
         def toggle_new():
             nonlocal tree, song_list, changed_new_status
-            selected_item = tree.selection()
-            if not selected_item:
-                return
-            item = selected_item[0]
-            if not tree.parent(item):
+            selected_items = tree.selection()  # Get all selected items
+            if not selected_items:
                 return
 
-            parent = tree.parent(item)
-            genre_id = int(parent.split('_')[1])
+            # Process each selected item
+            for item in selected_items:
+                if not tree.parent(item):  # Skip if it's a root item (genre)
+                    continue
 
-            # Get index of selected item within its genre
-            genre_songs = tree.get_children(parent)
-            current_index = genre_songs.index(item)
+                parent = tree.parent(item)
+                genre_id = int(parent.split('_')[1])
 
-            values = tree.item(item)['values']
-            song_id = values[2]
+                values = tree.item(item)['values']
+                song_id = values[3]  # Updated index for song_id
 
-            # Instead of immediately toggling, add/remove from set
-            if song_id in changed_new_status:
-                changed_new_status.remove(song_id)
-            else:
-                changed_new_status.add(song_id)
+                # Toggle changed status for each selected song
+                if song_id in changed_new_status:
+                    changed_new_status.remove(song_id)
+                else:
+                    changed_new_status.add(song_id)
 
-            # Get current song info without toggling
-            song = self.datatable.get_song_info(song_id)
-            current_title = song.songNameList[langvar.get()][0]
+                # Get current song info
+                song = self.datatable.get_song_info(song_id)
+                current_title = song.songNameList[langvar.get()][0]
+                current_sub = song.songSubList[langvar.get()][0]  # Get subtitle
 
-            # Update title in tree based on whether it's in our change set
-            # XOR operation: either in changed_set and not new, or new and not in changed_set
-            will_be_new = (song_id in changed_new_status) != song.new
+                # Calculate new status for this song
+                will_be_new = (song_id in changed_new_status) != song.new
 
-            for genre_id in range(len(song_list)):
-                genre_iid = f"genre_{genre_id}"
-                genre_items = tree.get_children(genre_iid)
+                # Update all instances of this song across all genres
+                for genre_id in range(len(song_list)):
+                    genre_iid = f"genre_{genre_id}"
+                    genre_items = tree.get_children(genre_iid)
 
-                # Find all instances of this song in the current genre
-                for genre_item in genre_items:
-                    item_values = tree.item(genre_item)['values']
-                    if item_values[2] == song_id:  # Match song ID
-                        new_values = list(item_values)
-                        if will_be_new:
-                            new_values[1] = f"♦ {current_title}"
-                        else:
-                            new_values[1] = current_title
-                        tree.item(genre_item, values=tuple(new_values))
+                    # Find all instances of this song in the current genre
+                    for genre_item in genre_items:
+                        item_values = tree.item(genre_item)['values']
+                        if item_values[3] == song_id:  # Updated index for matching song_id
+                            new_values = list(item_values)
+                            if will_be_new:
+                                new_values[1] = f"♦ {current_title}"
+                            else:
+                                new_values[1] = current_title
+                            new_values[2] = current_sub  # Keep subtitle unchanged
+                            tree.item(genre_item, values=tuple(new_values))
 
-                        # Update song_list for this genre
-                        current_index = genre_items.index(genre_item)
-                        song_list[genre_id][current_index].new = will_be_new
+                            # Update song_list for this genre
+                            current_index = genre_items.index(genre_item)
+                            song_list[genre_id][current_index].new = will_be_new
 
         # Controls
 
@@ -1133,9 +1188,9 @@ class Program:
 
         # Create and place the results table - note the change to show="tree headings"
         tree = ttk.Treeview(tree_frame,
-                            columns=("Music Order", "Title", "SongId", "UniqueId"),
-                            show="tree headings", selectmode="browse",
-                            height=35)  # Changed this line to show tree structure
+                            columns=("Music Order", "Title", "Subtitle", "SongId", "UniqueId"),
+                            show="tree headings",
+                            height=35)
 
         # Create vertical scrollbar
         vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=tree.yview)
@@ -1148,12 +1203,14 @@ class Program:
         # Define headings for the table
         tree.heading("Music Order", text="Music Order")
         tree.heading("Title", text="Title")
+        tree.heading("Subtitle", text="Subtitle")  # New column
         tree.heading("SongId", text="SongId")
         tree.heading("UniqueId", text="UniqueId")
 
         # Configure column widths (optional but recommended)
         tree.column("Music Order", width=75)
         tree.column("Title", width=275)
+        tree.column("Subtitle", width=200)  # New column
         tree.column("SongId", width=75)
         tree.column("UniqueId", width=75)
 
@@ -1311,6 +1368,7 @@ class Program:
             data = parse_tja.parse_and_get_data(tja_path)
         except Exception as e:
             messagebox.showerror('TJA Import', f'TJA Import Error: {e}')
+            traceback.print_exc()
             return
 
         if use_without_datatable:
@@ -1462,7 +1520,7 @@ class Program:
                                  songFileName=f'sound/song_{new_id}'
                                  )
 
-        for i in range(4):
+        for i in range(len(constants.LANGUAGES)):
             self.song_info.songNameList[i] = (data.title, i)
             self.song_info.songSubList[i] = (data.sub, i)
         self.songid_entry.delete(0, tk.END)
@@ -1532,6 +1590,7 @@ class Program:
             data = parse_tja.parse_and_get_data(tja_path)
         except Exception as e:
             messagebox.showerror('TJA Import', f'TJA Import Error: {e}')
+            traceback.print_exc()
             return
 
         if data.star[4] == 0:
@@ -1675,6 +1734,10 @@ class Program:
             if auto_close != config.config.auto_close_search:
                 config.config.update_auto_close_search(auto_close)
 
+            recalc_shinuti = recalc_shinuti_var.get()
+            if recalc_shinuti != config.config.recalculate_shinuti_score_with_required_renda_count:
+                config.config.update_recalculate_shinuti_score_with_required_renda_count(recalc_shinuti)
+
             config_window.destroy()
 
         # Create main window with improved styling
@@ -1717,6 +1780,15 @@ class Program:
             variable=auto_close_var
         )
         auto_close_checkbox.grid(row=1, column=0, columnspan=2, pady=5, sticky="w")
+
+        # New checkbox for recalculate shinuti score
+        recalc_shinuti_var = tk.BooleanVar(value=config.config.recalculate_shinuti_score_with_required_renda_count)
+        recalc_shinuti_checkbox = ttk.Checkbutton(
+            general_frame,
+            text="Recalculate shinuchi score with required renda count",
+            variable=recalc_shinuti_var
+        )
+        recalc_shinuti_checkbox.grid(row=2, column=0, columnspan=2, pady=5, sticky="w")
 
         # API Settings
         # Datatable Key
@@ -1996,18 +2068,6 @@ class Program:
             frame = ttk.LabelFrame(main_frame, text=diff, padding="5")
             frame.grid(row=0, column=col, padx=5, pady=5, sticky=(tk.W, tk.E, tk.N, tk.S))
 
-            def make_validate_float():
-                def validate_float(value):
-                    if value == "":
-                        return True
-                    try:
-                        float(value)
-                        return True
-                    except ValueError:
-                        return False
-
-                return validate_float
-
             def make_update_count(col_num):
                 def update_count(event):
                     if not validate_float(renda_vars[col_num].get()):
@@ -2045,6 +2105,7 @@ class Program:
                 return toggle_fields
 
             validate_float = make_validate_float()
+            validate_int   = make_validate_int()
             update_count = make_update_count(col)
             update_speed = make_update_speed(col)
 
@@ -2073,14 +2134,19 @@ class Program:
             # Shinuti
             shinuti_label = ttk.Label(frame, text="Shinuchi:")
             shinuti_label.grid(row=5, column=0, padx=5, pady=2, sticky=tk.W)
-            shinuti_vars.append(tk.StringVar(value="0"))
+            if config.config.recalculate_shinuti_score_with_required_renda_count:
+                shinuti_vars.append(tk.StringVar(value=str(self.shinuchi_values[col].get())))
+            else:
+                shinuti_vars.append(tk.StringVar(value="0"))
             shinuti_entry = ttk.Entry(frame, textvariable=shinuti_vars[col])
             shinuti_entry.grid(row=6, column=0, padx=5, pady=2, sticky=(tk.W, tk.E))
 
             # Register validation command
-            vcmd = frame.register(validate_float)
-            renda_entry.config(validate='key', validatecommand=(vcmd, '%P'))
-            renda_count_entry.config(validate='key', validatecommand=(vcmd, '%P'))
+            vcmd_float = frame.register(validate_float)
+            vcmd_int = frame.register(validate_int)
+            renda_entry.config(validate='key', validatecommand=(vcmd_float, '%P'))
+            renda_count_entry.config(validate='key', validatecommand=(vcmd_int, '%P'))
+            shinuti_entry.config(validate='key', validatecommand=(vcmd_int, '%P'))
 
             # Create list of entries to enable/disable
             entries = [renda_entry, renda_count_entry, shinuti_entry]
@@ -2095,13 +2161,18 @@ class Program:
             toggle_fields()
 
         # Hint label
+        if config.config.recalculate_shinuti_score_with_required_renda_count:
+            text = "Hint: shinuchi is a required field when recalculating shinuchi score with required renda count"
+        else:
+            text = "Hint: leave the shinuchi field as 0 to recalculate shinuchi along with shinuchi score"
         hint_label = ttk.Label(main_frame,
-                               text="Hint: leave the shinuchi field as 0 to recalculate shinuchi along with shinuchi score")
+                               text=text)
         hint_label.grid(row=1, column=0, columnspan=5, pady=(2, 0), sticky=tk.W)
 
         def handle_recalculate():
             recalculated_shinuti = {}
             recalculated_shinuti_score = {}
+            recalculated_tenjyou = {}
 
             for i in range(5):
                 if not enabled_vars[i].get(): continue
@@ -2117,18 +2188,38 @@ class Program:
                     messagebox.showerror("Recalculate Shinuchi Score",
                                          f"Shinuchi {shinuti_vars[i].get()} is not valid")
                     return
-
-                recalculated_shinuti_val, recalculated_shinuti_score_val = parse_tja.calculate_shinuti_and_shinuti_score(
-                    roll_duration_s=self.song_info.renda_time[i],
-                    impoppable_balloon_s=0,
-                    # This function assumes its 0, if it's not zero use the re-calculate everything feature
-                    poppable_balloon_count=self.song_info.fuusen_total[i],
-                    onpu_num=self.song_info.onpu_num[i],
-                    required_renda_speed=required_renda_speed,
-                    shinuti=shinuti
-                )
+                if config.config.recalculate_shinuti_score_with_required_renda_count:
+                    if shinuti == 0:
+                        messagebox.showerror("Recalculate Shinuchi Score",
+                                             f"Shinuchi cannot be 0 when recalculating using required renda count")
+                        return
+                    try:
+                        required_renda_count = int(renda_count_vars[i].get())
+                    except ValueError:
+                        messagebox.showerror("Recalculate Shinuchi Score",
+                                             f"Required renda count {renda_count_vars[i].get()} is not valid")
+                        return
+                    recalculated_shinuti_val = shinuti
+                    tenjyou_val, recalculated_shinuti_score_val = parse_tja.calculate_tenjyou_and_shinuti_score_from_renda_count(
+                        shinuti=shinuti,
+                        poppable_balloon_count=self.fuusen_total_values[i].get(),
+                        onpu_num=self.onpu_num_values[i].get(),
+                        required_renda_count=required_renda_count
+                    )
+                else:
+                    recalculated_shinuti_val, recalculated_shinuti_score_val, tenjyou_val = parse_tja.calculate_shinuti_and_shinuti_score(
+                        roll_duration_s=float(self.renda_time_values[i].get()),
+                        impoppable_balloon_s=0,
+                        # This function assumes its 0, if it's not zero use the re-calculate everything feature
+                        poppable_balloon_count=self.fuusen_total_values[i].get(),
+                        onpu_num=self.onpu_num_values[i].get(),
+                        required_renda_speed=required_renda_speed,
+                        shinuti=shinuti
+                    )
                 recalculated_shinuti[i] = recalculated_shinuti_val
                 recalculated_shinuti_score[i] = recalculated_shinuti_score_val
+                recalculated_tenjyou[i] = tenjyou_val
+
 
             comparison_window = tk.Toplevel()
             comparison_window.grab_set()
@@ -2186,9 +2277,31 @@ class Program:
 
                 current_col += 2
 
+            # Tenjyou Row
+            ttk.Label(main_frame, text="Tenjyou:").grid(
+                row=3, column=0, sticky=tk.E, padx=(0, 5), pady=2)
+
+            current_col = 1
+            for diff_i, diff_name in difficulties_to_show:
+                # Old value (readonly)
+                old_values[diff_name]['tenjyou'] = tk.StringVar(
+                    value='')
+                tk.Entry(main_frame, textvariable=old_values[diff_name]['tenjyou'],
+                         state="readonly", width=15).grid(
+                    row=3, column=current_col, padx=5, pady=2)
+
+                # New value (readonly)
+                new_values[diff_name]['tenjyou'] = tk.StringVar(
+                    value=str(recalculated_tenjyou[diff_i]))
+                tk.Entry(main_frame, textvariable=new_values[diff_name]['tenjyou'],
+                         state="readonly", width=15).grid(
+                    row=3, column=current_col + 1, padx=5, pady=2)
+
+                current_col += 2
+
             # Shinuchi Score row
             ttk.Label(main_frame, text="Shinuchi Score:").grid(
-                row=3, column=0, sticky=tk.E, padx=(0, 5), pady=2)
+                row=4, column=0, sticky=tk.E, padx=(0, 5), pady=2)
 
             current_col = 1
             for diff_i, diff_name in difficulties_to_show:
@@ -2197,13 +2310,13 @@ class Program:
                     value=str(getattr(self.song_info, 'shinuti_score')[diff_i]))
                 tk.Entry(main_frame, textvariable=old_values[diff_name]['shinuti_score'],
                          state="readonly", width=15).grid(
-                    row=3, column=current_col, padx=5, pady=2)
+                    row=4, column=current_col, padx=5, pady=2)
 
                 # New value (editable)
                 new_values[diff_name]['shinuti_score'] = tk.StringVar(value=str(recalculated_shinuti_score[diff_i]))
                 tk.Entry(main_frame, textvariable=new_values[diff_name]['shinuti_score'],
                          width=15).grid(
-                    row=3, column=current_col + 1, padx=5, pady=2)
+                    row=4, column=current_col + 1, padx=5, pady=2)
 
                 current_col += 2
 
@@ -2231,20 +2344,7 @@ class Program:
 
             # Button frame
             button_frame = ttk.Frame(main_frame)
-            button_frame.grid(row=4, column=0, columnspan=len(difficulties_to_show) * 2 + 1,
-                              pady=(10, 0), sticky=tk.E)
-
-            # Buttons
-            ttk.Button(button_frame, text="Cancel", command=handle_cancel).pack(side=tk.LEFT, padx=(0, 5))
-            ttk.Button(button_frame, text="Apply", command=handle_apply).pack(side=tk.LEFT)
-
-            # Configure grid weights for proper alignment
-            for i in range(len(difficulties_to_show) * 2 + 1):
-                main_frame.columnconfigure(i, weight=1)
-
-            # Button frame
-            button_frame = ttk.Frame(main_frame)
-            button_frame.grid(row=4, column=0, columnspan=len(difficulties_to_show) * 2 + 1,
+            button_frame.grid(row=5, column=0, columnspan=len(difficulties_to_show) * 2 + 1,
                               pady=(10, 0), sticky=tk.E)
 
             # Buttons
@@ -2256,7 +2356,7 @@ class Program:
                 main_frame.columnconfigure(i, weight=1)
 
         def handle_cancel():
-            window.destroy()
+                window.destroy()
 
         # Button frame with right justification
         button_frame = ttk.Frame(main_frame)
@@ -2275,7 +2375,7 @@ class Program:
             try:
                 float(v.get())
             except ValueError:
-                messagebox.showerror("Recalculate Shinuchi Score", f"Invalid renda time {v}", parent=window)
+                messagebox.showerror("Recalculate Shinuchi Score", f"Invalid renda time {v}")
                 return
 
         # Create a new Toplevel window
@@ -2324,18 +2424,6 @@ class Program:
             # Create LabelFrame for each difficulty
             frame = ttk.LabelFrame(main_frame, text=diff, padding="5")
             frame.grid(row=0, column=col, padx=5, pady=5, sticky=(tk.W, tk.E, tk.N, tk.S))
-
-            def make_validate_float():
-                def validate_float(value):
-                    if value == "":
-                        return True
-                    try:
-                        float(value)
-                        return True
-                    except ValueError:
-                        return False
-
-                return validate_float
 
             def make_update_count(col_num):
                 def update_count(event):
@@ -2587,3 +2675,28 @@ class Program:
 
     def star_on_leave(self, event):
         self.star_label.configure(fg="black")
+
+
+def make_validate_float():
+    def validate_float(value):
+        if value == "":
+            return True
+        try:
+            float(value)
+            return True
+        except ValueError:
+            return False
+
+    return validate_float
+
+def make_validate_int():
+    def validate_int(value):
+        if value == "":
+            return True
+        try:
+            int(value)
+            return True
+        except ValueError:
+            return False
+
+    return validate_int

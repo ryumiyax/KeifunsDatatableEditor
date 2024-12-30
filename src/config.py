@@ -8,6 +8,7 @@ class Config:
     default_required_renda_speed: float
     dancers: dict
     auto_close_search: bool
+    recalculate_shinuti_score_with_required_renda_count: bool
 
     def __init__(self) -> None:
         # Define the directory and file paths
@@ -24,6 +25,7 @@ class Config:
             "gameFilesOutDir": "",
             "defaultRequiredRendaSpeed": 17,
             "autoCloseSearch": True,
+            "recalculateShinutiScoreWithRequiredRendaCount": False,
             "dancers": {
                 "001_miku": {
                     "ensoPartsID1": 1,
@@ -359,6 +361,9 @@ class Config:
             d['autoCloseSearch'] = default_config['autoCloseSearch']
             updated = True
 
+        if 'recalculateShinutiScoreWithRequiredRendaCount' not in d:
+            d['recalculateShinutiScoreWithRequiredRendaCount'] = default_config['recalculateShinutiScoreWithRequiredRendaCount']
+            updated = True
         if 'dancers' not in d:
             d['dancers'] = default_config['dancers']
             updated = True
@@ -374,6 +379,7 @@ class Config:
         self.game_files_out_dir = d['gameFilesOutDir']
         self.default_required_renda_speed = d['defaultRequiredRendaSpeed']
         self.auto_close_search = d['autoCloseSearch']
+        self.recalculate_shinuti_score_with_required_renda_count = d['recalculateShinutiScoreWithRequiredRendaCount']
         self.dancers = d['dancers']
 
     def update_keys(self, datatable_key: str, fumen_key: str) -> None:
@@ -393,6 +399,10 @@ class Config:
 
     def update_auto_close_search(self, auto_close_search: bool):
         self.auto_close_search = auto_close_search
+        self.write_back_to_json()
+
+    def update_recalculate_shinuti_score_with_required_renda_count(self, recalculate_shinuti_score_with_required_renda_count: bool):
+        self.recalculate_shinuti_score_with_required_renda_count = recalculate_shinuti_score_with_required_renda_count
         self.write_back_to_json()
 
     def write_back_to_json(self):
