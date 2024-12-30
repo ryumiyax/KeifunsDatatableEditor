@@ -23,8 +23,8 @@ GENRE_NAME_MAP = {
 
 GENRE_COLOURS = {
     0: '#49d5eb',
-    1: '#fe9e01',
-    2: '#fe90d2',
+    1: '#fe90d2',
+    2: '#fe9e01',
     3: '#cbcfde',
     4: '#cc8aeb',
     5: '#ff7028',
