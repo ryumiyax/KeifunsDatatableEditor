@@ -425,7 +425,7 @@ def get_statistics(course):
     notes = [0, 0, 0, 0]
     rendas, balloons = [], []
     start, end, combo = 0, 0, 0
-    renda_start = False
+    renda_start = -1
     balloon_start, balloon_count, balloon_gogo = False, 0, 0
     sc_cur_event_idx = 0
     sc_cur_event = course['events'][sc_cur_event_idx]
@@ -494,9 +494,9 @@ def get_statistics(course):
             continue
 
         elif note['type'] == 'end':
-            if renda_start:
+            if renda_start != -1:
                 rendas.append([note['time'] - renda_start, bpm_at_renda_start])
-                renda_start = False
+                renda_start = -1
             elif balloon_start:
                 balloon_length = note['time'] - balloon_start
                 balloon_speed = balloon_count / balloon_length
@@ -566,7 +566,7 @@ def parse_and_get_data(tja_file: str, shinuti_override: List[int] = None, requir
         stats = get_statistics(convert_to_timed(parsed['courses'][i]))
         ret.length[i] = stats['length']
         ret.onpu_num[i] = stats['totalCombo']
-        ret.fuusen_total[i] = sum(x[1] for x in stats['balloons'])
+
         impoppable_balloon_s = 0.0 #BTD reference???
         impoppable_balloon_count = 0
         poppable_balloon_count = 0
@@ -586,6 +586,7 @@ def parse_and_get_data(tja_file: str, shinuti_override: List[int] = None, requir
             # number_of_beats = bpm_start / 60 * time  # (BPM / 60) = BPS, BPS*TIME(S) = Beats
             # required_renda_speed += 60 / bpm_start * (number_of_beats * 12 - 1) / 12
 
+        ret.fuusen_total[i] = poppable_balloon_count
         #Most of the time this is correct, but you know namco is retarded and loves to overcomplicate shit
 
         ## Old shit
