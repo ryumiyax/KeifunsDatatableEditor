@@ -1610,7 +1610,9 @@ class Program:
         self.song_info = self.datatable.get_song_info(song_id)
         self.song_info.star[4] = data.star[4]
         self.song_info.shinuti[4] = data.shinuti[4]
+        self.song_info.shinuti_duet[4] = data.shinuti[4]
         self.song_info.shinuti_score[4] = data.shinuti_score[4]
+        self.song_info.shinuti_score_duet[4] = data.shinuti_score[4]
         self.song_info.onpu_num[4] = data.onpu_num[4]
         self.song_info.fuusen_total[4] = data.fuusen_total[4]
         self.song_info.renda_time[4] = data.renda_time[4]
