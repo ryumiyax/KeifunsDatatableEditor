@@ -270,7 +270,7 @@ class Program:
 
         self.song_name_entry = tk.Entry(self.song_details_subframes[0], textvariable=self.song_name_var)
         self.song_name_entry.grid(row=1, column=0, sticky="ew")
-        self.song_name_font_spinbox = tk.Spinbox(self.song_details_subframes[0], from_=0, to=3, width=2,
+        self.song_name_font_spinbox = tk.Spinbox(self.song_details_subframes[0], from_=0, to=len(constants.LANGUAGES) - 1, width=2,
                                                  textvariable=self.song_name_font_var)
         self.song_name_font_spinbox.grid(row=1, column=1, sticky="w")
 
@@ -280,7 +280,7 @@ class Program:
 
         self.song_sub_entry = tk.Entry(self.song_details_subframes[0], textvariable=self.song_sub_var)
         self.song_sub_entry.grid(row=3, column=0, sticky="ew")
-        self.song_sub_font_spinbox = tk.Spinbox(self.song_details_subframes[0], from_=0, to=3, width=2,
+        self.song_sub_font_spinbox = tk.Spinbox(self.song_details_subframes[0], from_=0, to=len(constants.LANGUAGES) - 1, width=2,
                                                 textvariable=self.song_sub_font_var)
         self.song_sub_font_spinbox.grid(row=3, column=1, sticky="w")
 
@@ -290,7 +290,7 @@ class Program:
 
         self.song_detail_entry = tk.Entry(self.song_details_subframes[0], textvariable=self.song_detail_var)
         self.song_detail_entry.grid(row=5, column=0, sticky="ew")
-        self.song_detail_font_spinbox = tk.Spinbox(self.song_details_subframes[0], from_=0, to=3, width=2,
+        self.song_detail_font_spinbox = tk.Spinbox(self.song_details_subframes[0], from_=0, to=len(constants.LANGUAGES) - 1, width=2,
                                                    textvariable=self.song_detail_font_var)
         self.song_detail_font_spinbox.grid(row=5, column=1, sticky="w")
 
@@ -1721,12 +1721,18 @@ class Program:
         def submit_config():
             datatable_key = entry_datatable_key.get()
             fumen_key = entry_fumen_key.get()
+
+            # Collect renda speeds for all difficulties
             try:
-                renda_speed = float(entry_renda_speed.get())
-                if renda_speed != config.config.default_required_renda_speed:
-                    config.config.update_default_required_renda_speed(renda_speed)
-            except ValueError:
-                messagebox.showerror("Settings", f"Invalid renda speed value {entry_renda_speed.get()}")
+                renda_speeds = []
+                for entry in renda_entries:
+                    speed = float(entry.get())
+                    renda_speeds.append(speed)
+
+                if renda_speeds != config.config.default_required_renda_speeds:
+                    config.config.update_default_required_renda_speed(renda_speeds)
+            except ValueError as e:
+                messagebox.showerror("Settings", f"Invalid renda speed value. All values must be valid numbers.")
                 return
 
             if datatable_key != config.config.datatable_key or fumen_key != config.config.fumen_key:
@@ -1750,7 +1756,7 @@ class Program:
         config_window.attributes('-toolwindow', True)
 
         # Set minimum window size
-        config_window.minsize(500, 250)
+        config_window.minsize(500, 350)  # Increased height to accommodate new fields
 
         # Add padding around the entire window
         main_frame = ttk.Frame(config_window)
@@ -1763,34 +1769,50 @@ class Program:
         general_frame.grid(row=0, column=0, sticky="nsew", pady=(0, 15))
         main_frame.grid_columnconfigure(0, weight=1)
 
+        # Create a separate frame for renda speeds
+        renda_frame = ttk.LabelFrame(main_frame, text="Required Renda Speeds", padding="10")
+        renda_frame.grid(row=1, column=0, sticky="nsew", pady=(0, 15))
+
         aes_key_frame = ttk.LabelFrame(main_frame, text="AES Keys", padding="10")
-        aes_key_frame.grid(row=1, column=0, sticky="nsew", pady=(0, 15))
+        aes_key_frame.grid(row=2, column=0, sticky="nsew", pady=(0, 15))
 
-        # Gameplay Settings
-        renda_label = ttk.Label(general_frame, text="Default Required Renda Speed:")
-        renda_label.grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        # Renda Speed Settings
+        difficulties = ["Easy", "Normal", "Hard", "Oni", "Ura"]
+        renda_entries = []
 
-        entry_renda_speed = ttk.Entry(general_frame, width=15)
-        entry_renda_speed.grid(row=0, column=1, padx=5, pady=5, sticky="w")
-        entry_renda_speed.insert(0, str(config.config.default_required_renda_speed))
+        # Create a header
+        header_label = ttk.Label(renda_frame, text="Default Required Renda Speed per Difficulty:")
+        header_label.grid(row=0, column=0, columnspan=2, padx=5, pady=(0, 10), sticky="w")
 
-        # Auto close checkbox in gameplay frame
+        # Create entry fields for each difficulty
+        for i, diff in enumerate(difficulties):
+            label = ttk.Label(renda_frame, text=f"{diff}:")
+            label.grid(row=i + 1, column=0, padx=5, pady=5, sticky="w")
+
+            entry = ttk.Entry(renda_frame, width=15)
+            entry.grid(row=i + 1, column=1, padx=5, pady=5, sticky="w")
+            # Insert current value for this difficulty level
+            current_speed = config.config.default_required_renda_speeds[i]
+            entry.insert(0, str(current_speed))
+            renda_entries.append(entry)
+
+        # Auto close checkbox in general frame
         auto_close_var = tk.BooleanVar(value=config.config.auto_close_search)
         auto_close_checkbox = ttk.Checkbutton(
             general_frame,
             text="Auto close search window after selection",
             variable=auto_close_var
         )
-        auto_close_checkbox.grid(row=1, column=0, columnspan=2, pady=5, sticky="w")
+        auto_close_checkbox.grid(row=0, column=0, columnspan=2, pady=5, sticky="w")
 
-        # New checkbox for recalculate shinuti score
+        # Checkbox for recalculate shinuti score
         recalc_shinuti_var = tk.BooleanVar(value=config.config.recalculate_shinuti_score_with_required_renda_count)
         recalc_shinuti_checkbox = ttk.Checkbutton(
             general_frame,
             text="Recalculate shinuchi score with required renda count",
             variable=recalc_shinuti_var
         )
-        recalc_shinuti_checkbox.grid(row=2, column=0, columnspan=2, pady=5, sticky="w")
+        recalc_shinuti_checkbox.grid(row=1, column=0, columnspan=2, pady=5, sticky="w")
 
         # API Settings
         # Datatable Key
@@ -1814,7 +1836,7 @@ class Program:
 
         # Button frame at the bottom
         button_frame = ttk.Frame(main_frame)
-        button_frame.grid(row=2, column=0, pady=(0, 10), sticky="e")
+        button_frame.grid(row=3, column=0, pady=(0, 10), sticky="e")
 
         # Create Cancel Button
         cancel_button = ttk.Button(
@@ -1829,13 +1851,13 @@ class Program:
             button_frame,
             text="Save Settings",
             command=submit_config,
-            style="Accent.TButton"  # This requires setting up the style
+            style="Accent.TButton"
         )
         submit_button.grid(row=0, column=1, padx=5)
 
         # Optional: Create and configure a custom style for the accent button
         style = ttk.Style()
-        if style.theme_use() == 'default':  # Only do this for default theme
+        if style.theme_use() == 'default':
             style.configure(
                 "Accent.TButton",
                 background="#007bff",
@@ -2117,7 +2139,7 @@ class Program:
             # Required Renda Speed
             speed_label = ttk.Label(frame, text="Required Renda Speed:")
             speed_label.grid(row=1, column=0, padx=5, pady=2, sticky=tk.W)
-            renda_vars.append(tk.StringVar(value=str(config.config.default_required_renda_speed)))
+            renda_vars.append(tk.StringVar(value=str(config.config.default_required_renda_speeds[col])))
             renda_entry = ttk.Entry(frame, textvariable=renda_vars[col])
             renda_entry.grid(row=2, column=0, padx=5, pady=2, sticky=(tk.W, tk.E))
             renda_entry.bind('<Return>', update_count)
@@ -2127,7 +2149,7 @@ class Program:
             count_label = ttk.Label(frame, text="Required Renda Count:")
             count_label.grid(row=3, column=0, padx=5, pady=2, sticky=tk.W)
             renda_count_vars.append(tk.StringVar(value=str(
-                round(config.config.default_required_renda_speed * float(self.renda_time_values[col].get())))))
+                round(config.config.default_required_renda_speeds[col] * float(self.renda_time_values[col].get())))))
             renda_count_entry = ttk.Entry(frame, textvariable=renda_count_vars[col])
             renda_count_entry.grid(row=4, column=0, padx=5, pady=2, sticky=(tk.W, tk.E))
             renda_count_entry.bind('<Return>', update_speed)
@@ -2473,7 +2495,7 @@ class Program:
             # Required Renda Speed
             speed_label = ttk.Label(frame, text="Required Renda Speed:")
             speed_label.grid(row=1, column=0, padx=5, pady=2, sticky=tk.W)
-            renda_vars.append(tk.StringVar(value=str(config.config.default_required_renda_speed)))
+            renda_vars.append(tk.StringVar(value=str(config.config.default_required_renda_speeds[col])))
             renda_entry = ttk.Entry(frame, textvariable=renda_vars[col])
             renda_entry.grid(row=2, column=0, padx=5, pady=2, sticky=(tk.W, tk.E))
             renda_entry.bind('<Return>', update_count)
@@ -2483,7 +2505,7 @@ class Program:
             count_label = ttk.Label(frame, text="Required Renda Count:")
             count_label.grid(row=3, column=0, padx=5, pady=2, sticky=tk.W)
             renda_count_vars.append(tk.StringVar(value=str(
-                round(config.config.default_required_renda_speed * float(self.renda_time_values[col].get())))))
+                round(config.config.default_required_renda_speeds[col] * float(self.renda_time_values[col].get())))))
             renda_count_entry = ttk.Entry(frame, textvariable=renda_count_vars[col])
             renda_count_entry.grid(row=4, column=0, padx=5, pady=2, sticky=(tk.W, tk.E))
             renda_count_entry.bind('<Return>', update_speed)

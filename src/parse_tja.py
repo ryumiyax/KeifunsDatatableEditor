@@ -606,7 +606,7 @@ def parse_and_get_data(tja_file: str, shinuti_override: List[int] = None, requir
         if required_renda_speed_override is not None and required_renda_speed_override[i] != 0:
             required_renda_speed = required_renda_speed_override[i]
         else:
-            required_renda_speed = config.default_required_renda_speed
+            required_renda_speed = config.default_required_renda_speeds[i]
 
         if shinuti_override is not None and shinuti_override[i] != 0:
             shinuti = shinuti_override[i]

@@ -5,7 +5,7 @@ class Config:
     datatable_key: str
     fumen_key: str
     game_files_out_dir: str
-    default_required_renda_speed: float
+    default_required_renda_speeds: list[float]
     dancers: dict
     auto_close_search: bool
     recalculate_shinuti_score_with_required_renda_count: bool
@@ -23,7 +23,7 @@ class Config:
             "datatableKey": "3530304242323633353537423431384139353134383346433246464231354534",
             "fumenKey": "4434423946383537303842433443383030333843444132343339373531353830",
             "gameFilesOutDir": "",
-            "defaultRequiredRendaSpeed": 17,
+            "defaultRequiredRendaSpeeds": [6,8,11,17,17],
             "autoCloseSearch": True,
             "recalculateShinutiScoreWithRequiredRendaCount": False,
             "dancers": {
@@ -353,8 +353,11 @@ class Config:
             d['gameFilesOutDir'] = default_config['gameFilesOutDir']
             updated = True
 
-        if 'defaultRequiredRendaSpeed' not in d:
-            d['defaultRequiredRendaSpeed'] = default_config['defaultRequiredRendaSpeed']
+        if 'defaultRequiredRendaSpeeds' not in d:
+            d['defaultRequiredRendaSpeeds'] = default_config['defaultRequiredRendaSpeeds']
+            if d['defaultRequiredRendaSpeed'] in d:
+                d['defaultRequiredRendaSpeeds'][3] = d['defaultRequiredRendaSpeed']
+                d['defaultRequiredRendaSpeeds'][4] = d['defaultRequiredRendaSpeed']
             updated = True
 
         if 'autoCloseSearch' not in d:
@@ -377,7 +380,7 @@ class Config:
         self.datatable_key = d['datatableKey']
         self.fumen_key = d['fumenKey']
         self.game_files_out_dir = d['gameFilesOutDir']
-        self.default_required_renda_speed = d['defaultRequiredRendaSpeed']
+        self.default_required_renda_speeds = d['defaultRequiredRendaSpeeds']
         self.auto_close_search = d['autoCloseSearch']
         self.recalculate_shinuti_score_with_required_renda_count = d['recalculateShinutiScoreWithRequiredRendaCount']
         self.dancers = d['dancers']
@@ -393,8 +396,8 @@ class Config:
         self.game_files_out_dir = game_files_out_dir
         self.write_back_to_json()
 
-    def update_default_required_renda_speed(self, default_required_renda_speed: float):
-        self.default_required_renda_speed = default_required_renda_speed
+    def update_default_required_renda_speed(self, default_required_renda_speeds: list[float]):
+        self.default_required_renda_speeds = default_required_renda_speeds
         self.write_back_to_json()
 
     def update_auto_close_search(self, auto_close_search: bool):
@@ -411,7 +414,9 @@ class Config:
             "datatableKey": self.datatable_key,
             "fumenKey": self.fumen_key,
             "gameFilesOutDir": self.game_files_out_dir,
+            "defaultRequiredRendaSpeeds": self.default_required_renda_speeds,
             "autoCloseSearch": self.auto_close_search,
+            "recalculateShinutiScoreWithRequiredRendaCount": self.recalculate_shinuti_score_with_required_renda_count,
             "dancers": self.dancers
         }
 
