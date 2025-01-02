@@ -2,10 +2,13 @@ import json
 import os
 
 class Config:
-    datatableKey: str
-    fumenKey: str
-    gameFilesOutDir: str
+    datatable_key: str
+    fumen_key: str
+    game_files_out_dir: str
+    default_required_renda_speeds: list[float]
     dancers: dict
+    auto_close_search: bool
+    recalculate_shinuti_score_with_required_renda_count: bool
 
     def __init__(self) -> None:
         # Define the directory and file paths
@@ -20,6 +23,9 @@ class Config:
             "datatableKey": "3530304242323633353537423431384139353134383346433246464231354534",
             "fumenKey": "4434423946383537303842433443383030333843444132343339373531353830",
             "gameFilesOutDir": "",
+            "defaultRequiredRendaSpeeds": [6,8,11,17,17],
+            "autoCloseSearch": True,
+            "recalculateShinutiScoreWithRequiredRendaCount": False,
             "dancers": {
                 "001_miku": {
                     "ensoPartsID1": 1,
@@ -338,11 +344,28 @@ class Config:
         if 'datatableKey' not in d or not d['datatableKey']:
             d['datatableKey'] = default_config['datatableKey']
             updated = True
+
         if 'fumenKey' not in d or not d['fumenKey']:
             d['fumenKey'] = default_config['fumenKey']
             updated = True
+
         if 'gameFilesOutDir' not in d:
             d['gameFilesOutDir'] = default_config['gameFilesOutDir']
+            updated = True
+
+        if 'defaultRequiredRendaSpeeds' not in d:
+            d['defaultRequiredRendaSpeeds'] = default_config['defaultRequiredRendaSpeeds']
+            if d['defaultRequiredRendaSpeed'] in d:
+                d['defaultRequiredRendaSpeeds'][3] = d['defaultRequiredRendaSpeed']
+                d['defaultRequiredRendaSpeeds'][4] = d['defaultRequiredRendaSpeed']
+            updated = True
+
+        if 'autoCloseSearch' not in d:
+            d['autoCloseSearch'] = default_config['autoCloseSearch']
+            updated = True
+
+        if 'recalculateShinutiScoreWithRequiredRendaCount' not in d:
+            d['recalculateShinutiScoreWithRequiredRendaCount'] = default_config['recalculateShinutiScoreWithRequiredRendaCount']
             updated = True
         if 'dancers' not in d:
             d['dancers'] = default_config['dancers']
@@ -354,28 +377,46 @@ class Config:
                 json.dump(d, config_file, indent=4)
 
         # Set class attributes
-        self.datatableKey = d['datatableKey']
-        self.fumenKey = d['fumenKey']
-        self.gameFilesOutDir = d['gameFilesOutDir']
+        self.datatable_key = d['datatableKey']
+        self.fumen_key = d['fumenKey']
+        self.game_files_out_dir = d['gameFilesOutDir']
+        self.default_required_renda_speeds = d['defaultRequiredRendaSpeeds']
+        self.auto_close_search = d['autoCloseSearch']
+        self.recalculate_shinuti_score_with_required_renda_count = d['recalculateShinutiScoreWithRequiredRendaCount']
         self.dancers = d['dancers']
 
-    def update_keys(self, datatableKey: str, fumenKey: str) -> None:
+    def update_keys(self, datatable_key: str, fumen_key: str) -> None:
         """Update the configuration and save it to the config.json file."""
         # Update the class attributes
-        self.datatableKey = datatableKey
-        self.fumenKey = fumenKey
+        self.datatable_key = datatable_key
+        self.fumen_key = fumen_key
         self.write_back_to_json()
 
     def update_game_files_out_dir(self, game_files_out_dir: str):
-        self.gameFilesOutDir = game_files_out_dir
+        self.game_files_out_dir = game_files_out_dir
+        self.write_back_to_json()
+
+    def update_default_required_renda_speed(self, default_required_renda_speeds: list[float]):
+        self.default_required_renda_speeds = default_required_renda_speeds
+        self.write_back_to_json()
+
+    def update_auto_close_search(self, auto_close_search: bool):
+        self.auto_close_search = auto_close_search
+        self.write_back_to_json()
+
+    def update_recalculate_shinuti_score_with_required_renda_count(self, recalculate_shinuti_score_with_required_renda_count: bool):
+        self.recalculate_shinuti_score_with_required_renda_count = recalculate_shinuti_score_with_required_renda_count
         self.write_back_to_json()
 
     def write_back_to_json(self):
         # Update the configuration dictionary
         updated_config = {
-            "datatableKey": self.datatableKey,
-            "fumenKey": self.fumenKey,
-            "gameFilesOutDir": self.gameFilesOutDir,
+            "datatableKey": self.datatable_key,
+            "fumenKey": self.fumen_key,
+            "gameFilesOutDir": self.game_files_out_dir,
+            "defaultRequiredRendaSpeeds": self.default_required_renda_speeds,
+            "autoCloseSearch": self.auto_close_search,
+            "recalculateShinutiScoreWithRequiredRendaCount": self.recalculate_shinuti_score_with_required_renda_count,
             "dancers": self.dancers
         }
 

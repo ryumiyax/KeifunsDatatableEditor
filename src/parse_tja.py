@@ -11,6 +11,9 @@ from dataclasses import dataclass, field
 from typing import List, Dict
 from math import ceil, floor
 import typing
+
+from src.config import config
+
 HEADER_GLOBAL = [
     'TITLE',
     'SUBTITLE',
@@ -422,7 +425,7 @@ def get_statistics(course):
     notes = [0, 0, 0, 0]
     rendas, balloons = [], []
     start, end, combo = 0, 0, 0
-    renda_start = False
+    renda_start = -1
     balloon_start, balloon_count, balloon_gogo = False, 0, 0
     sc_cur_event_idx = 0
     sc_cur_event = course['events'][sc_cur_event_idx]
@@ -491,9 +494,9 @@ def get_statistics(course):
             continue
 
         elif note['type'] == 'end':
-            if renda_start:
+            if renda_start != -1:
                 rendas.append([note['time'] - renda_start, bpm_at_renda_start])
-                renda_start = False
+                renda_start = -1
             elif balloon_start:
                 balloon_length = note['time'] - balloon_start
                 balloon_speed = balloon_count / balloon_length
@@ -524,13 +527,14 @@ class SongData:
     title: str = ""
     sub: str = ""
     star: List[int] = field(default_factory=lambda: [0, 0, 0, 0, 0])
+    length: List[float] = field(default_factory=lambda: [0.0, 0.0, 0.0, 0.0, 0.0])
     shinuti: List[int] = field(default_factory=lambda: [0, 0, 0, 0, 0])
     shinuti_score: List[int] = field(default_factory=lambda: [0, 0, 0, 0, 0])
     onpu_num: List[int] = field(default_factory=lambda: [0, 0, 0, 0, 0])
     renda_time: List[float] = field(default_factory=lambda: [0.0, 0.0, 0.0, 0.0, 0.0])
     fuusen_total: List[int] = field(default_factory=lambda: [0, 0, 0, 0, 0])
 
-def parse_and_get_data(tja_file: str) -> SongData:
+def parse_and_get_data(tja_file: str, shinuti_override: List[int] = None, required_renda_speed_override: List[float] = None) -> SongData:
     """Takes in a tja fname and returns a parse_tja.SongData object"""
     ret = SongData()
     file_str = None  # Initialize file_str to avoid the UnboundLocalError
@@ -556,16 +560,16 @@ def parse_and_get_data(tja_file: str) -> SongData:
     ret.demo_start = float(parsed['headers']['demostart'])
     ret.title = parsed['headers']['title']
     sub = parsed['headers']['subtitle']
-    ret.sub = sub[2::] if sub.startswith('--') else sub 
+    ret.sub = sub[2::] if sub.startswith('--') else sub
     for i in parsed['courses'].keys():
         ret.star[i] = parsed['courses'][i]['headers']['level']
         stats = get_statistics(convert_to_timed(parsed['courses'][i]))
+        ret.length[i] = stats['length']
         ret.onpu_num[i] = stats['totalCombo']
-        ret.fuusen_total[i] = sum(x[1] for x in stats['balloons'])
+
         impoppable_balloon_s = 0.0 #BTD reference???
         impoppable_balloon_count = 0
         poppable_balloon_count = 0
-        required_renda_speed = 17 #HARDCODED
         for time, count, impoppable, bpm_start in stats['balloons']:
             if impoppable:
                 impoppable_balloon_s += time
@@ -582,6 +586,7 @@ def parse_and_get_data(tja_file: str) -> SongData:
             # number_of_beats = bpm_start / 60 * time  # (BPM / 60) = BPS, BPS*TIME(S) = Beats
             # required_renda_speed += 60 / bpm_start * (number_of_beats * 12 - 1) / 12
 
+        ret.fuusen_total[i] = poppable_balloon_count
         #Most of the time this is correct, but you know namco is retarded and loves to overcomplicate shit
 
         ## Old shit
@@ -591,14 +596,40 @@ def parse_and_get_data(tja_file: str) -> SongData:
         # ret.shinuti_score[i] = round(initial * ret.onpu_num[i] + (ret.fuusen_total[i] + estimated_renda) * 100)
 
         ## New shit
-        required_renda_speed = 17 #HARDCODED
-        roll_duration_int = round(ret.renda_time[i]) + round(impoppable_balloon_s)
-        roll_duration = ret.renda_time[i] + impoppable_balloon_s
-        ret.shinuti[i] = ceil((100_000.0 - 10 * (floor(required_renda_speed * roll_duration_int / 1000) + poppable_balloon_count)) / ret.onpu_num[i]) * 10
-        tenjyou = ret.shinuti[i] * ret.onpu_num[i] + 100 * (floor(required_renda_speed * roll_duration / 1000) + poppable_balloon_count)
-        ret.shinuti_score[i] = tenjyou + floor(required_renda_speed * roll_duration) * 100
+        # roll_duration_int = round(ret.renda_time[i]) + round(impoppable_balloon_s)
+        # roll_duration = ret.renda_time[i] + impoppable_balloon_s
+        # ret.shinuti[i] = ceil((100_000.0 - 10 * (floor(required_renda_speed * roll_duration_int / 1000) + poppable_balloon_count)) / ret.onpu_num[i]) * 10
+        # tenjyou = ret.shinuti[i] * ret.onpu_num[i] + 100 * (floor(required_renda_speed * roll_duration / 1000) + poppable_balloon_count)
+        # ret.shinuti_score[i] = tenjyou + floor(required_renda_speed * roll_duration) * 100
+
+        ## Newer shit
+        if required_renda_speed_override is not None and required_renda_speed_override[i] != 0:
+            required_renda_speed = required_renda_speed_override[i]
+        else:
+            required_renda_speed = config.default_required_renda_speeds[i]
+
+        if shinuti_override is not None and shinuti_override[i] != 0:
+            shinuti = shinuti_override[i]
+        else:
+            shinuti = 0
+        ret.shinuti[i], ret.shinuti_score[i], _ = calculate_shinuti_and_shinuti_score(ret.renda_time[i], impoppable_balloon_s, poppable_balloon_count, ret.onpu_num[i], required_renda_speed, shinuti=shinuti)
+
     return ret
-        
-    
-if __name__ == '__main__':
-    print(parse_and_get_data('C:\\Users\\knunes\\Downloads\\poxeiDOON.tja'))
+
+def calculate_shinuti_and_shinuti_score(roll_duration_s: float, impoppable_balloon_s: float, poppable_balloon_count: int, onpu_num: int, required_renda_speed: float, shinuti: int = 0):
+    """
+    Setting shinuti will overwrite shinuti calculation
+    :return: shinuti, shinuti_score
+    """
+    roll_duration_int = round(roll_duration_s) + round(impoppable_balloon_s)
+    roll_duration = roll_duration_s + impoppable_balloon_s
+    if shinuti == 0: shinuti = ceil((100_000.0 - 10 * (floor(required_renda_speed * roll_duration_int / 1000) + poppable_balloon_count)) / onpu_num) * 10
+    tenjyou = shinuti * onpu_num + 100 * (floor(required_renda_speed * roll_duration / 1000) + poppable_balloon_count)
+    shinuti_score = tenjyou + floor(required_renda_speed * roll_duration) * 100
+    return shinuti, shinuti_score, tenjyou
+
+def calculate_tenjyou_and_shinuti_score_from_renda_count(shinuti: int, poppable_balloon_count: int, onpu_num: int, required_renda_count: int) -> tuple[int, int]:
+    tenjyou = shinuti * onpu_num + poppable_balloon_count * 100
+    shinuti_score = tenjyou + floor(required_renda_count) * 100
+    return tenjyou, shinuti_score
+

@@ -29,7 +29,7 @@ def remove_pkcs7_padding(data):
 
 def decrypt_file(input_file, is_fumen):
     # Convert the key from hex to bytes
-    key = binascii.unhexlify(config.config.fumenKey if is_fumen else config.config.datatableKey)
+    key = binascii.unhexlify(config.config.fumen_key if is_fumen else config.config.datatable_key)
 
     # Read the IV from the first 16 bytes of the input file
     iv = read_iv_from_file(input_file)
@@ -69,7 +69,7 @@ def isJson(file: bytes):
 
 def encrypt_file(input_file, is_fumen):
     # Convert the key from hex to bytes
-    key = binascii.unhexlify(config.config.fumenKey if is_fumen else config.config.datatableKey)
+    key = binascii.unhexlify(config.config.fumen_key if is_fumen else config.config.datatable_key)
 
     # Generate a random 128-bit IV
     iv = os.urandom(16)

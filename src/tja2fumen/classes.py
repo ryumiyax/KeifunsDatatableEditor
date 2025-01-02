@@ -5,12 +5,13 @@ Dataclasses used to represent song courses, branches, measures, and notes.
 import csv
 import os
 import struct
+from src import common
 from typing import Any, List, Dict, Tuple
 
 from dataclasses import dataclass, field, fields
 
 from src.tja2fumen.constants import BRANCH_NAMES, TIMING_WINDOWS
-from src import common
+
 
 @dataclass()
 class TJAData:
@@ -72,6 +73,7 @@ class TJAMeasureProcessed:
     delay: float = 0.0
     section: bool = False
     levelhold: bool = False
+    senote: str = ''
     branch_type: str = ''
     branch_cond: Tuple[float, float] = (0.0, 0.0)
     notes: List[TJAData] = field(default_factory=list)
@@ -93,6 +95,7 @@ class FumenNote:
     hits: int = 0
     hits_padding: int = 0
     drumroll_bytes: bytes = b'\x00\x00\x00\x00\x00\x00\x00\x00'
+    manually_set: bool = False
 
 
 @dataclass()
