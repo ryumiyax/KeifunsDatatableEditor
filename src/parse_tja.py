@@ -574,35 +574,14 @@ def parse_and_get_data(tja_file: str, shinuti_override: List[int] = None, requir
             if impoppable:
                 impoppable_balloon_s += time
                 impoppable_balloon_count += count
-
-                #If impoppable add to renda speed
-                # number_of_beats = bpm_start / 60 * time # (BPM / 60) = BPS, BPS*TIME(S) = Beats
-                # required_renda_speed += 60 / bpm_start * (number_of_beats * 12 - 1) / 12
             else:
                 poppable_balloon_count += count
 
         for time, bpm_start in stats['rendas']:
             ret.renda_time[i] += time
-            # number_of_beats = bpm_start / 60 * time  # (BPM / 60) = BPS, BPS*TIME(S) = Beats
-            # required_renda_speed += 60 / bpm_start * (number_of_beats * 12 - 1) / 12
 
         ret.fuusen_total[i] = poppable_balloon_count
-        #Most of the time this is correct, but you know namco is retarded and loves to overcomplicate shit
 
-        ## Old shit
-        # ret.shinuti[i] = round_five_down(100_000.0 / ret.onpu_num[i]) * 10
-        # estimated_renda = ret.renda_time[i] * ((37 + ((63 / 16) * (max(4, i + 1) ** 2))) / 6)
-        # initial = max(ceil(((1_000_000 - ((ret.fuusen_total[i] + estimated_renda) * 100)) / ret.onpu_num[i]) / 10) * 10, 0)
-        # ret.shinuti_score[i] = round(initial * ret.onpu_num[i] + (ret.fuusen_total[i] + estimated_renda) * 100)
-
-        ## New shit
-        # roll_duration_int = round(ret.renda_time[i]) + round(impoppable_balloon_s)
-        # roll_duration = ret.renda_time[i] + impoppable_balloon_s
-        # ret.shinuti[i] = ceil((100_000.0 - 10 * (floor(required_renda_speed * roll_duration_int / 1000) + poppable_balloon_count)) / ret.onpu_num[i]) * 10
-        # tenjyou = ret.shinuti[i] * ret.onpu_num[i] + 100 * (floor(required_renda_speed * roll_duration / 1000) + poppable_balloon_count)
-        # ret.shinuti_score[i] = tenjyou + floor(required_renda_speed * roll_duration) * 100
-
-        ## Newer shit
         if required_renda_speed_override is not None and required_renda_speed_override[i] != 0:
             required_renda_speed = required_renda_speed_override[i]
         else:
