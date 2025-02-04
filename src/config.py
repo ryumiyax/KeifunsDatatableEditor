@@ -355,7 +355,7 @@ class Config:
 
         if 'defaultRequiredRendaSpeeds' not in d:
             d['defaultRequiredRendaSpeeds'] = default_config['defaultRequiredRendaSpeeds']
-            if d['defaultRequiredRendaSpeed'] in d:
+            if 'defaultRequiredRendaSpeed' in d:
                 d['defaultRequiredRendaSpeeds'][3] = d['defaultRequiredRendaSpeed']
                 d['defaultRequiredRendaSpeeds'][4] = d['defaultRequiredRendaSpeed']
             updated = True
