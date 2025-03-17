@@ -199,6 +199,8 @@ class Program:
         self.window.bind("<Control-u>", self.on_add_ura)  # type: ignore
         self.window.bind("<Control-f>", self.search_view)
         self.window.bind("<Control-m>", self.music_order_view)
+        self.window.bind("<Control-Shift-KeyPress-M>", self.show_remove_songs_from_music_order_window)
+        self.window.bind("<Control-Shift-KeyPress-D>", self.show_batch_delete_songs_window)
         self.window.bind("<Control-r>", self.recalculate_shinuchi_score)
         self.window.bind("<Control-Shift-KeyPress-R>", self.recalculate_all)
 
@@ -270,7 +272,8 @@ class Program:
 
         self.song_name_entry = tk.Entry(self.song_details_subframes[0], textvariable=self.song_name_var)
         self.song_name_entry.grid(row=1, column=0, sticky="ew")
-        self.song_name_font_spinbox = tk.Spinbox(self.song_details_subframes[0], from_=0, to=len(constants.LANGUAGES) - 1, width=2,
+        self.song_name_font_spinbox = tk.Spinbox(self.song_details_subframes[0], from_=0,
+                                                 to=len(constants.LANGUAGES) - 1, width=2,
                                                  textvariable=self.song_name_font_var)
         self.song_name_font_spinbox.grid(row=1, column=1, sticky="w")
 
@@ -280,7 +283,8 @@ class Program:
 
         self.song_sub_entry = tk.Entry(self.song_details_subframes[0], textvariable=self.song_sub_var)
         self.song_sub_entry.grid(row=3, column=0, sticky="ew")
-        self.song_sub_font_spinbox = tk.Spinbox(self.song_details_subframes[0], from_=0, to=len(constants.LANGUAGES) - 1, width=2,
+        self.song_sub_font_spinbox = tk.Spinbox(self.song_details_subframes[0], from_=0,
+                                                to=len(constants.LANGUAGES) - 1, width=2,
                                                 textvariable=self.song_sub_font_var)
         self.song_sub_font_spinbox.grid(row=3, column=1, sticky="w")
 
@@ -290,7 +294,8 @@ class Program:
 
         self.song_detail_entry = tk.Entry(self.song_details_subframes[0], textvariable=self.song_detail_var)
         self.song_detail_entry.grid(row=5, column=0, sticky="ew")
-        self.song_detail_font_spinbox = tk.Spinbox(self.song_details_subframes[0], from_=0, to=len(constants.LANGUAGES) - 1, width=2,
+        self.song_detail_font_spinbox = tk.Spinbox(self.song_details_subframes[0], from_=0,
+                                                   to=len(constants.LANGUAGES) - 1, width=2,
                                                    textvariable=self.song_detail_font_var)
         self.song_detail_font_spinbox.grid(row=5, column=1, sticky="w")
 
@@ -847,7 +852,7 @@ class Program:
 
                 # Update the values
                 tree.item(item, values=(
-                prev_values[0], current_values[1], current_values[2], current_values[3], current_values[4]))
+                    prev_values[0], current_values[1], current_values[2], current_values[3], current_values[4]))
                 tree.item(prev_item,
                           values=(current_values[0], prev_values[1], prev_values[2], prev_values[3], prev_values[4]))
 
@@ -898,7 +903,7 @@ class Program:
 
                 # Update the values
                 tree.item(item, values=(
-                next_values[0], current_values[1], current_values[2], current_values[3], current_values[4]))
+                    next_values[0], current_values[1], current_values[2], current_values[3], current_values[4]))
                 tree.item(next_item,
                           values=(current_values[0], next_values[1], next_values[2], next_values[3], next_values[4]))
 
@@ -1056,7 +1061,9 @@ class Program:
             # Confirm deletion with user
             num_songs = len(valid_items)
             if num_songs > 1:
-                if not messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete these {num_songs} songs?", parent=musicorder_window):
+                if not messagebox.askyesno("Confirm Delete",
+                                           f"Are you sure you want to delete these {num_songs} songs?",
+                                           parent=musicorder_window):
                     return
 
             # Group items by genre for proper index handling
@@ -2005,7 +2012,7 @@ class Program:
         for i, display in enumerate(self.music_order_genre_display_var):
             if display.get():
                 self.song_info.musicOrder[i] = self.music_order_genre_order_var[i].get(), \
-                self.music_order_genre_close_disp_type_var[i].get()
+                    self.music_order_genre_close_disp_type_var[i].get()
             else:
                 self.song_info.musicOrder[i] = -1, 0
         self.music_order_window.destroy()
@@ -2129,7 +2136,7 @@ class Program:
                 return toggle_fields
 
             validate_float = make_validate_float()
-            validate_int   = make_validate_int()
+            validate_int = make_validate_int()
             update_count = make_update_count(col)
             update_speed = make_update_speed(col)
 
@@ -2244,7 +2251,6 @@ class Program:
                 recalculated_shinuti_score[i] = recalculated_shinuti_score_val
                 recalculated_tenjyou[i] = tenjyou_val
 
-
             comparison_window = tk.Toplevel()
             comparison_window.grab_set()
             comparison_window.focus_force()
@@ -2349,12 +2355,16 @@ class Program:
                     try:
                         int(new_values[diff_name]['shinuti'].get())
                     except ValueError:
-                        messagebox.showerror("Recalculate Shinuchi", f"Shinuchi {new_values[diff_name]['shinuti'].get()} is not valid", parent=comparison_window)
+                        messagebox.showerror("Recalculate Shinuchi",
+                                             f"Shinuchi {new_values[diff_name]['shinuti'].get()} is not valid",
+                                             parent=comparison_window)
                         return
                     try:
                         int(new_values[diff_name]['shinuti_score'].get())
                     except ValueError:
-                        messagebox.showerror("Recalculate Shinuchi", f"Shinuchi Score {new_values[diff_name]['shinuti_score'].get()} is not valid", parent=comparison_window)
+                        messagebox.showerror("Recalculate Shinuchi",
+                                             f"Shinuchi Score {new_values[diff_name]['shinuti_score'].get()} is not valid",
+                                             parent=comparison_window)
                         return
 
                 for i, diff_name in difficulties_to_show:
@@ -2380,7 +2390,7 @@ class Program:
                 main_frame.columnconfigure(i, weight=1)
 
         def handle_cancel():
-                window.destroy()
+            window.destroy()
 
         # Button frame with right justification
         button_frame = ttk.Frame(main_frame)
@@ -2389,7 +2399,6 @@ class Program:
         # Recalculate and Cancel buttons
         ttk.Button(button_frame, text="Cancel", command=handle_cancel).pack(side=tk.LEFT, padx=(0, 5))
         ttk.Button(button_frame, text="Recalculate", command=handle_recalculate).pack(side=tk.LEFT)
-
 
     def recalculate_all(self, *args):
         if not self.current_songid: return
@@ -2547,7 +2556,8 @@ class Program:
                 try:
                     required_renda_speeds.append(float(renda_vars[i].get()))
                 except ValueError:
-                    messagebox.showerror("Recalculate Shinuchi Score", f"Renda speed {renda_vars[i].get()} is not valid",
+                    messagebox.showerror("Recalculate Shinuchi Score",
+                                         f"Renda speed {renda_vars[i].get()} is not valid",
                                          parent=window)
                     return
                 try:
@@ -2615,7 +2625,7 @@ class Program:
             # Calculate total width of the window
             total_columns = len(difficulties_to_show) * 2 + 2  # +2 for label and checkbox columns
             entry_width = max(15, int((comparison_window.winfo_screenwidth() * 0.8) / (
-                        total_columns * 8)))  # Approximate char width
+                    total_columns * 8)))  # Approximate char width
 
             # Create rows
             for row_idx, (label_text, key) in enumerate(rows, start=2):
@@ -2680,7 +2690,6 @@ class Program:
             for i in range(len(difficulties_to_show) * 2 + 1):
                 main_frame.columnconfigure(i, weight=1)
 
-
         def handle_cancel():
             window.destroy()
 
@@ -2692,10 +2701,74 @@ class Program:
         ttk.Button(button_frame, text="Cancel", command=handle_cancel).pack(side=tk.LEFT, padx=(0, 5))
         ttk.Button(button_frame, text="Recalculate", command=handle_recalculate).pack(side=tk.LEFT)
 
+    def show_remove_songs_from_music_order_window(self, *args):
+        dialog = tk.Toplevel(self.window)
+        dialog.title("Remove Songs From Music Order")
+        dialog.geometry("300x120")
+        dialog.transient(self.window)
+        dialog.grab_set()
+
+        label = ttk.Label(dialog, text="Enter unique IDs (comma separated):")
+        label.pack(pady=10)
+
+        entry = ttk.Entry(dialog, width=40)
+        entry.pack(pady=5)
+
+        def submit():
+            id_text = entry.get().strip()
+            if not id_text:
+                return
+
+            try:
+                id_set = {int(id.strip()) for id in id_text.split(',')}
+                self.datatable.remove_songs_from_music_order(id_set)
+                dialog.destroy()
+            except ValueError:
+                tk.messagebox.showerror("Error", "Invalid ID format. Please use comma-separated numbers.")
+
+        submit_btn = ttk.Button(dialog, text="Remove Songs", command=submit)
+        submit_btn.pack(pady=10)
+
+    def show_batch_delete_songs_window(self, *args):
+        dialog = tk.Toplevel(self.window)
+        dialog.title("Batch Delete Songs")
+        dialog.geometry("300x120")
+        dialog.transient(self.window)
+        dialog.grab_set()
+
+        label = ttk.Label(dialog, text="Enter unique IDs (comma separated):")
+        label.pack(pady=10)
+
+        entry = ttk.Entry(dialog, width=40)
+        entry.pack(pady=5)
+
+        def submit():
+            id_text = entry.get().strip()
+            if not id_text:
+                return
+
+            try:
+                id_set = {int(id.strip()) for id in id_text.split(',')}
+            except ValueError:
+                tk.messagebox.showerror("Error", "Invalid ID format. Please use comma-separated numbers.")
+                return
+            errors = ""
+            for unique_id in id_set:
+                try:
+                    song_id = self.datatable.get_songid_from_unique_id(unique_id)
+                    self.datatable.delete_song(song_id)
+                except Exception as e:
+                    errors += f"{e}\n"
+            if errors:
+                tk.messagebox.showerror("Error", errors)
+                return
+            dialog.destroy()
+
+        submit_btn = ttk.Button(dialog, text="Remove Songs", command=submit)
+        submit_btn.pack(pady=10)
 
     def star_on_enter(self, event):
         self.star_label.configure(fg="blue")
-
 
     def star_on_leave(self, event):
         self.star_label.configure(fg="black")
@@ -2712,6 +2785,7 @@ def make_validate_float():
             return False
 
     return validate_float
+
 
 def make_validate_int():
     def validate_int(value):

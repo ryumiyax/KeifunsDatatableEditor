@@ -12,7 +12,7 @@ from typing import List, Tuple
 When adding a new attribute:
     1. If new file: 
         create dataclass, variable in class, parser function,
-        add index attribute to indices class, add search function in get_indices(),
+        add index attribute to indices class, add search function in get_indices(), create index mapping dict
         *also double check if update_uid() is affected
     2. Add attribute to Song class
     3. Update get_song_info()
@@ -824,6 +824,29 @@ class Datatable:
                     closeDispType=song.closeDispType
                 ))
 
+    def remove_songs_from_music_order(self, unique_id_set: set):
+        for genre in range(len(self.music_order)):
+            self.music_order[genre] = [
+                song for song in self.music_order[genre]
+                if song.uniqueId not in unique_id_set
+            ]
+
+    def get_songid_from_unique_id(self, unique_id):
+        if unique_id not in self.uid_musicinfo_index_mapping:
+            raise Exception(f"Unique id {unique_id} not found")
+        return self.musicinfo[self.uid_musicinfo_index_mapping[unique_id]].id
+
+    def import_song(self,
+                    musicinfo_item: MusicinfoItem,
+                    music_attribute_item: MusicAttributeItem,
+                    music_ai_section_item: MusicAISectionItem,
+                    music_usbsetting_item: MusicUsbsettingItem,
+                    wordlist_items: List[WordlistItem],
+                    music_orders: List[MusicOrderItem]
+                    ):
+
+
+
     def parse_musicinfo(self) -> None:
         with open(os.path.join(self.filepath, 'musicinfo.json'), 'r', encoding='utf-8') as f:
             data_dict = json.load(f)  # Load JSON data as a Python dictionary
@@ -843,6 +866,7 @@ class Datatable:
                 musicinfo_item = MusicinfoItem(**full_item)
                 self.musicinfo.append(musicinfo_item)
                 self.musicinfo_indices[musicinfo_item.id] = i
+                self.uid_musicinfo_index_mapping[musicinfo_item.uniqueId] = i
                 i += 1
             except TypeError as e:
                 print(f"Failed to create musicinfoItem from {item['id']}: {e}")
