@@ -836,16 +836,14 @@ class Datatable:
             raise Exception(f"Unique id {unique_id} not found")
         return self.musicinfo[self.uid_musicinfo_index_mapping[unique_id]].id
 
-    def import_song(self,
-                    musicinfo_item: MusicinfoItem,
-                    music_attribute_item: MusicAttributeItem,
-                    music_ai_section_item: MusicAISectionItem,
-                    music_usbsetting_item: MusicUsbsettingItem,
-                    wordlist_items: List[WordlistItem],
-                    music_orders: List[MusicOrderItem]
-                    ):
-
-
+    # def import_song(self,
+    #                 musicinfo_item: MusicinfoItem,
+    #                 music_attribute_item: MusicAttributeItem,
+    #                 music_ai_section_item: MusicAISectionItem,
+    #                 music_usbsetting_item: MusicUsbsettingItem,
+    #                 wordlist_items: List[WordlistItem],
+    #                 music_orders: List[MusicOrderItem]
+    #                 ):
 
     def parse_musicinfo(self) -> None:
         with open(os.path.join(self.filepath, 'musicinfo.json'), 'r', encoding='utf-8') as f:
