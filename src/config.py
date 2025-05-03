@@ -23,7 +23,7 @@ class Config:
             "datatableKey": "3530304242323633353537423431384139353134383346433246464231354534",
             "fumenKey": "4434423946383537303842433443383030333843444132343339373531353830",
             "gameFilesOutDir": "",
-            "defaultRequiredRendaSpeeds": [6,8,11,17,17],
+            "defaultRequiredRendaSpeeds": [6.37, 8.83, 16.6, 16.6, 16.6],
             "autoCloseSearch": True,
             "recalculateShinutiScoreWithRequiredRendaCount": False,
             "dancers": {
