@@ -12,7 +12,6 @@ KeifunsDatatableEditor (KDE) is a replacement for TaikoSoundEditor (TSE), specif
 
 ## Planned Features
 - MusicAttribute tag editing
-- Song search by name/subtitle
 - Shougou/reward editing
 - Japanese translation
 
