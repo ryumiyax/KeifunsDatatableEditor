@@ -142,7 +142,9 @@ def get_course(tja_headers, lines):
             elif line['name'] == 'BALLOON':
                 headers['balloon'] = [int(b) for b in re.split(r'[^0-9]', line['value']) if b]
             elif line['name'] == 'SCOREINIT':
-                headers['scoreInit'] = int(line['value'])
+                if ',' in line['value']:
+                    headers['scoreInit'] = int(line['value'].split(',')[0])
+                else: headers['scoreInit'] = int(line['value'])
             elif line['name'] == 'SCOREDIFF':
                 headers['scoreDiff'] = int(line['value'])
             elif line['name'] == 'TTROWBEAT':
@@ -572,13 +574,15 @@ def parse_and_get_data(tja_file: str, shinuti_override: List[int] = None, requir
         poppable_balloon_count = 0
         for time, count, impoppable, bpm_start in stats['balloons']:
             if impoppable:
+                # ret.renda_time[i] += calculate_difficulty_renda_time(time, i)
                 impoppable_balloon_s += time
                 impoppable_balloon_count += count
             else:
                 poppable_balloon_count += count
 
         for time, bpm_start in stats['rendas']:
-            ret.renda_time[i] += time
+            # use different coefficient for each difficulty
+            ret.renda_time[i] += calculate_difficulty_renda_time(time, i)
 
         ret.fuusen_total[i] = poppable_balloon_count
 
@@ -595,20 +599,35 @@ def parse_and_get_data(tja_file: str, shinuti_override: List[int] = None, requir
 
     return ret
 
+def calculate_difficulty_renda_time(time, difficulty):
+    if difficulty <= 0:  # Easy
+        return time * 0.96296546
+    elif difficulty == 1:  # Normal
+        return time * 0.9536449
+    else:  # Hard, Oni, Ura
+        return time * 0.94737088
+
 def calculate_shinuti_and_shinuti_score(roll_duration_s: float, impoppable_balloon_s: float, poppable_balloon_count: int, onpu_num: int, required_renda_speed: float, shinuti: int = 0):
     """
     Setting shinuti will overwrite shinuti calculation
     :return: shinuti, shinuti_score
     """
-    roll_duration_int = round(roll_duration_s) + round(impoppable_balloon_s)
-    roll_duration = roll_duration_s + impoppable_balloon_s
-    if shinuti == 0: shinuti = ceil((100_000.0 - 10 * (floor(required_renda_speed * roll_duration_int / 1000) + poppable_balloon_count)) / onpu_num) * 10
-    tenjyou = shinuti * onpu_num + 100 * (floor(required_renda_speed * roll_duration / 1000) + poppable_balloon_count)
-    shinuti_score = tenjyou + floor(required_renda_speed * roll_duration) * 100
+    roll_speed = round(required_renda_speed, 2)
+
+    balloon_score = poppable_balloon_count * 100
+    roll_score = ceil(ceil(roll_speed * (roll_duration_s + impoppable_balloon_s)) / 10) * 1000
+    if shinuti == 0: shinuti = ceil(float(1_000_000 - balloon_score - roll_score) / onpu_num / 10) * 10
+    else: shinuti = ceil(shinuti / 10) * 10
+
+    tenjyou = shinuti * onpu_num + balloon_score
+    shinuti_score = tenjyou + roll_score
     return shinuti, shinuti_score, tenjyou
 
 def calculate_tenjyou_and_shinuti_score_from_renda_count(shinuti: int, poppable_balloon_count: int, onpu_num: int, required_renda_count: int) -> tuple[int, int]:
-    tenjyou = shinuti * onpu_num + poppable_balloon_count * 100
-    shinuti_score = tenjyou + floor(required_renda_count) * 100
+    shinuti = ceil(shinuti / 10) * 10
+    balloon_score = poppable_balloon_count * 100
+    roll_score = ceil(required_renda_count / 10) * 1000
+    tenjyou = shinuti * onpu_num + balloon_score
+    shinuti_score = tenjyou + roll_score
     return tenjyou, shinuti_score
 

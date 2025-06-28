@@ -31,7 +31,7 @@ class Updater:
 
     def check_for_updates(self):
         try:
-            response = requests.get(self.github_raw_url)
+            response = requests.get(self.github_raw_url, timeout=5)
             if response.status_code == 200:
                 content = response.text
                 latest_version = self.extract_version_from_content(content)
