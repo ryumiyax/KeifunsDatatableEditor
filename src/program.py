@@ -1696,6 +1696,7 @@ class Program:
             self.datatable.export_datatable(selected_directory)
             messagebox.showinfo('Export Datable', 'Export success')
         except Exception as e:
+            traceback.print_exc()
             messagebox.showerror('Export Error', f'Export Error: {e}')
             return
 

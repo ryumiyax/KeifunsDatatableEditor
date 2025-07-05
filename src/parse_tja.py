@@ -615,7 +615,7 @@ def calculate_shinuti_and_shinuti_score(roll_duration_s: float, impoppable_ballo
     roll_speed = round(required_renda_speed, 2)
 
     balloon_score = poppable_balloon_count * 100
-    roll_score = ceil(ceil(roll_speed * (roll_duration_s + impoppable_balloon_s)) / 10) * 1000
+    roll_score = round(roll_speed * (roll_duration_s + impoppable_balloon_s)) * 100
     if shinuti == 0: shinuti = ceil(float(1_000_000 - balloon_score - roll_score) / onpu_num / 10) * 10
     else: shinuti = ceil(shinuti / 10) * 10
 
@@ -626,7 +626,7 @@ def calculate_shinuti_and_shinuti_score(roll_duration_s: float, impoppable_ballo
 def calculate_tenjyou_and_shinuti_score_from_renda_count(shinuti: int, poppable_balloon_count: int, onpu_num: int, required_renda_count: int) -> tuple[int, int]:
     shinuti = ceil(shinuti / 10) * 10
     balloon_score = poppable_balloon_count * 100
-    roll_score = ceil(required_renda_count / 10) * 1000
+    roll_score = required_renda_count * 100
     tenjyou = shinuti * onpu_num + balloon_score
     shinuti_score = tenjyou + roll_score
     return tenjyou, shinuti_score

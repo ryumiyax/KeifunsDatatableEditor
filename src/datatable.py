@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass, fields, field
-from typing import List, Dict
+from typing import List, Dict, Set
 import json
 import os
 from src import encryption, config
@@ -225,6 +225,7 @@ class Datatable:
     music_order: List[List[MusicOrderItem]]
     music_ai_section: List[MusicAISectionItem]
     music_usbsetting: List[MusicUsbsettingItem]
+    songs_not_in_main_genre: Set[str]
 
     def __init__(self, import_path: str):
         self.filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'datatable')
@@ -249,6 +250,7 @@ class Datatable:
         self.indices = dict()
         self.uid_musicinfo_index_mapping = dict()
         self.wordlist_indices = dict()
+        self.songs_not_in_main_genre = set()
         self.parse_musicinfo()
         self.parse_wordlist()
         self.parse_music_attribute()
@@ -417,6 +419,32 @@ class Datatable:
                          sub_item.chineseSText
                          )
                 ))
+        if main_genre_only:
+            songs_not_in_main_genre = []
+            for i, song_id in enumerate(self.songs_not_in_main_genre):
+                title_index, sub_index, _ = self.get_wordlist_indices(song_id)
+                title_item = self.wordlist[title_index] if title_index != -1 else WordlistItem()
+                sub_item = self.wordlist[sub_index] if sub_index != -1 else WordlistItem()
+                new = self.is_song_new(song_id)
+                unique_id = self.musicinfo[self.musicinfo_indices[song_id]].uniqueId
+                songs_not_in_main_genre.append(SongListItem(
+                    musicOrderIndex=i,
+                    id=song_id,
+                    uniqueId=unique_id,
+                    new=new,
+                    title=(title_item.japaneseText,
+                           title_item.englishUsText,
+                           title_item.chineseTText,
+                           title_item.koreanText,
+                           title_item.chineseSText),
+                    sub=(sub_item.japaneseText,
+                         sub_item.englishUsText,
+                         sub_item.chineseTText,
+                         sub_item.koreanText,
+                         sub_item.chineseSText
+                         )
+                ))
+            ret.append(songs_not_in_main_genre)
         return ret
 
     def get_song_music_order(self, id: str):
@@ -698,6 +726,7 @@ class Datatable:
         ## Musicinfo
         del self.musicinfo[deleted_indices.musicinfo]
         del self.musicinfo_indices[id]
+        self.songs_not_in_main_genre.discard(id)
 
         for k, v in self.musicinfo_indices.items():
             if v > deleted_indices.musicinfo:
@@ -866,6 +895,7 @@ class Datatable:
                 self.musicinfo_indices[musicinfo_item.id] = i
                 self.uid_musicinfo_index_mapping[musicinfo_item.uniqueId] = i
                 i += 1
+                self.songs_not_in_main_genre.add(musicinfo_item.id)
             except TypeError as e:
                 print(f"Failed to create musicinfoItem from {item['id']}: {e}")
 
@@ -918,10 +948,13 @@ class Datatable:
                 genre_no = music_order_item.genreNo
                 if 0 <= genre_no < len(self.music_order):
                     self.music_order[genre_no].append(music_order_item)
+                    if genre_no == self.musicinfo[self.musicinfo_indices[music_order_item.id]].genreNo:
+                        self.songs_not_in_main_genre.discard(music_order_item.id)
                 else:
                     print(f"Invalid genreNo {genre_no} for item {music_order_item.id}")
             except TypeError as e:
                 print(f"Failed to create MusicOrderItem from {item.get('id', 'unknown')}: {e}")
+        print(self.songs_not_in_main_genre)
 
     def parse_music_AI_section(self) -> None:
         with open(os.path.join(self.filepath, 'music_ai_section.json'), 'r', encoding='utf-8') as f:
@@ -1025,7 +1058,7 @@ class Datatable:
 
             # Check and cast each rendaTime field
             for field in renda_time_fields:
-                if item_dict[field].is_integer():
+                if not isinstance(item_dict[field], int) and item_dict[field].is_integer():
                     item_dict[field] = int(item_dict[field])
 
             items_list.append(item_dict)

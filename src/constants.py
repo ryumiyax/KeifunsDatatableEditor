@@ -18,7 +18,7 @@ GENRE_NAME_MAP = {
     4: "4. Game Music",
     5: "5. NAMCO Original",
     6: "6. Variety",
-    7: "7. Classic"
+    7: "7. Classic",
 }
 
 GENRE_COLOURS = {
@@ -29,7 +29,8 @@ GENRE_COLOURS = {
     4: '#cc8aeb',
     5: '#ff7028',
     6: '#0acc2a',
-    7: '#ded523'
+    7: '#ded523',
+    8: '#b0b0b0'
 }
 
 LANGUAGES = ('JPN', 'ENG', 'zh-tw', 'KOR', 'zh-cn')
