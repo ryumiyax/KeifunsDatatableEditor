@@ -1,5 +1,6 @@
 """
 Modern Folder JSON Editor with improved UI and song reordering
+I LOVE VIBE CODING
 """
 import os
 import tkinter as tk
@@ -78,7 +79,7 @@ class EventFolderEditor:
         header_frame.pack(fill='x', pady=(0, 10))
 
         # Title
-        title_label = ttk.Label(header_frame, text="Folder JSON Editor",
+        title_label = ttk.Label(header_frame, text="Event Folder Editor",
                                 style='Heading.TLabel')
         title_label.pack(side='left', padx=10, pady=10)
 
@@ -138,7 +139,8 @@ class EventFolderEditor:
                                          borderwidth=0,
                                          highlightthickness=1,
                                          highlightcolor='#4CAF50',
-                                         selectbackground='#E8F5E8')
+                                         # selectbackground='#E8F5E8'
+                                         )
         self.folder_listbox.pack(fill='both', expand=True)
         self.folder_listbox.bind('<<ListboxSelect>>', self.on_folder_select)
 
@@ -222,10 +224,14 @@ class EventFolderEditor:
         """Open and load JSON file"""
         file_path = filedialog.askopenfilename(
             initialdir=config.event_folder_dir,
-            title="Open Folder JSON File",
-            filetypes=[("JSON Files", "*.json"), ("All Files", "*.*")]
+            title="Open Event Folder File",
+            filetypes=[("JSON Files", "*.json"), ("All Files", "*.*")],
+            parent=self.root
         )
         if not file_path:
+            return
+        if os.path.basename(file_path) != "event_folder_data.json":
+            messagebox.showerror("Error", f"File not event_folder_data.json", parent=self.root)
             return
 
         try:
@@ -242,10 +248,9 @@ class EventFolderEditor:
     def update_window_title(self):
         """Update window title with current file"""
         if self.current_file_path:
-            filename = self.current_file_path.split('/')[-1]
-            self.root.title(f"Folder JSON Editor - {filename}")
+            self.root.title(f"Event Folder Editor - {self.current_file_path}")
         else:
-            self.root.title("Folder JSON Editor")
+            self.root.title("Event Folder Editor")
 
     def refresh_folder_list(self):
         """Refresh the folder list display"""
@@ -361,7 +366,7 @@ class EventFolderEditor:
         style.configure('SongEditor.TFrame', background='white', relief='raised', borderwidth=1)
 
         # Current songs in folder
-        current_songs = folder.get('songNo', [])
+        current_songs = folder.get('songNo', []).copy()
 
         # Language selection
         langvar = tk.IntVar(value=0)  # Default to Japanese
@@ -642,7 +647,6 @@ class EventFolderEditor:
 
             if removed_count > 0:
                 update_current_songs()
-                messagebox.showinfo("Success", f"Removed {removed_count} song(s).", parent=song_window)
 
         def clear_all_songs():
             """Clear all songs from folder"""
@@ -856,7 +860,8 @@ class EventFolderEditor:
         file_path = filedialog.asksaveasfilename(
             title="Save Folder JSON File",
             defaultextension=".json",
-            filetypes=[("JSON Files", "*.json"), ("All Files", "*.*")]
+            filetypes=[("JSON Files", "*.json"), ("All Files", "*.*")],
+            parent=self.root
         )
         if not file_path:
             return
