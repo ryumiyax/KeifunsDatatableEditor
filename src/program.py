@@ -18,6 +18,7 @@ from src import constants
 import traceback
 import shutil
 import webbrowser
+from src.ui.EventFolderEditor import EventFolderEditor
 
 
 class Program:
@@ -179,6 +180,7 @@ class Program:
         self.window_menu = tk.Menu(self.menu_bar, tearoff=0)
         self.window_menu.add_command(label="Search", accelerator="Ctrl+F", command=self.search_view)
         self.window_menu.add_command(label="Music Order", accelerator="Ctrl+M", command=self.music_order_view)
+        self.window_menu.add_command(label="Event Folder Editor", command=self.open_event_folder_editor)
         self.menu_bar.add_cascade(label="Window", menu=self.window_menu)
 
         # Help Menu
@@ -1251,6 +1253,8 @@ class Program:
         cancel_button = ttk.Button(button_frame, text='Cancel', command=cancel_changes)
         cancel_button.pack(side='right', padx=(5, 0))
 
+    def open_event_folder_editor(self, *args):
+        EventFolderEditor(self)
     def on_new_song(self, *args):
         if not hasattr(self, 'datatable'):
             messagebox.showerror('New Song', f'Open datatable first')
@@ -1688,12 +1692,13 @@ class Program:
             except Exception as e:
                 messagebox.showerror('Save Song', f'Song Save Error: {e}')
                 return
-        selected_directory = filedialog.askdirectory(title="Select an export directory")
+        selected_directory = filedialog.askdirectory(initialdir=config.config.datatable_dir, title="Select an export directory")
         if not selected_directory:
             messagebox.showerror('Export Error', f'Select a folderpath')
             return
         try:
             self.datatable.export_datatable(selected_directory)
+            config.config.update_datatable_dir(selected_directory)
             messagebox.showinfo('Export Datable', 'Export success')
         except Exception as e:
             traceback.print_exc()
@@ -1707,7 +1712,7 @@ class Program:
             except Exception as e:
                 messagebox.showerror('Save Song', f'Song Save Error: {e}')
                 return
-        selected_directory = filedialog.askdirectory(title="Select an import directory")
+        selected_directory = filedialog.askdirectory(initialdir=config.config.datatable_dir, title="Select an import directory")
         if not selected_directory:
             return
         try:
@@ -1718,6 +1723,7 @@ class Program:
             self.songid_entry.delete(0, tk.END)
             self.disable_all_widgets(self.window)
             self.initial = True
+            config.config.update_datatable_dir(selected_directory)
             messagebox.showinfo('Import Datable', 'Import success')
         except Exception as e:
             messagebox.showerror('Import Error', f'Import Error: {e}')

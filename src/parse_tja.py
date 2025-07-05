@@ -615,7 +615,7 @@ def calculate_shinuti_and_shinuti_score(roll_duration_s: float, impoppable_ballo
     roll_speed = round(required_renda_speed, 2)
 
     balloon_score = poppable_balloon_count * 100
-    roll_score = round(roll_speed * (roll_duration_s + impoppable_balloon_s)) * 100
+    roll_score = ceil(roll_speed * (roll_duration_s + impoppable_balloon_s)) * 100
     if shinuti == 0: shinuti = ceil(float(1_000_000 - balloon_score - roll_score) / onpu_num / 10) * 10
     else: shinuti = ceil(shinuti / 10) * 10
 

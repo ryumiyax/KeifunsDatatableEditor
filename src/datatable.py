@@ -208,6 +208,7 @@ class SongListItem:
     closeDispType: int = 0
     title: Tuple[str, str, str, str, str] = "", "", "", "", ""
     sub: Tuple[str, str, str, str, str] = "", "", "", "", ""
+    mainGenre: int = 0
 
 
 class Datatable:
@@ -386,6 +387,34 @@ class Datatable:
         if music_attribute_index == -1:
             return
         self.music_attribute[music_attribute_index].new = not self.music_attribute[music_attribute_index].new
+
+    def select_song_list(self, unique_id_list: List[int]):
+        ret = []
+        for unique_id in unique_id_list:
+            musicinfo_item = self.musicinfo[self.uid_musicinfo_index_mapping[unique_id]]
+            song_id = musicinfo_item.id
+            title_index, sub_index, _ = self.get_wordlist_indices(song_id)
+            title_item = self.wordlist[title_index] if title_index != -1 else WordlistItem()
+            sub_item = self.wordlist[sub_index] if sub_index != -1 else WordlistItem()
+            ret.append(
+                SongListItem(
+                    id=song_id,
+                    uniqueId=unique_id,
+                    title=(title_item.japaneseText,
+                           title_item.englishUsText,
+                           title_item.chineseTText,
+                           title_item.koreanText,
+                           title_item.chineseSText),
+                    sub=(sub_item.japaneseText,
+                         sub_item.englishUsText,
+                         sub_item.chineseTText,
+                         sub_item.koreanText,
+                         sub_item.chineseSText
+                         ),
+                    mainGenre=musicinfo_item.genreNo
+                )
+            )
+        return ret
 
     def get_song_list(self, main_genre_only: bool) -> List[List[SongListItem]]:
         ret = [[] for _ in range(8)]
@@ -954,7 +983,6 @@ class Datatable:
                     print(f"Invalid genreNo {genre_no} for item {music_order_item.id}")
             except TypeError as e:
                 print(f"Failed to create MusicOrderItem from {item.get('id', 'unknown')}: {e}")
-        print(self.songs_not_in_main_genre)
 
     def parse_music_AI_section(self) -> None:
         with open(os.path.join(self.filepath, 'music_ai_section.json'), 'r', encoding='utf-8') as f:

@@ -23,6 +23,8 @@ class Config:
             "datatableKey": "3530304242323633353537423431384139353134383346433246464231354534",
             "fumenKey": "4434423946383537303842433443383030333843444132343339373531353830",
             "gameFilesOutDir": "",
+            "datatableDir": "",
+            "eventFolderDir": "",
             "defaultRequiredRendaSpeeds": [6.37, 8.83, 16.6, 16.6, 16.6],
             "autoCloseSearch": True,
             "recalculateShinutiScoreWithRequiredRendaCount": False,
@@ -353,6 +355,14 @@ class Config:
             d['gameFilesOutDir'] = default_config['gameFilesOutDir']
             updated = True
 
+        if 'datatableDir' not in d:
+            d['datatableDir'] = default_config['datatableDir']
+            updated = True
+
+        if 'eventFolderDir' not in d:
+            d['eventFolderDir'] = default_config['eventFolderDir']
+            updated = True
+
         if 'defaultRequiredRendaSpeeds' not in d:
             d['defaultRequiredRendaSpeeds'] = default_config['defaultRequiredRendaSpeeds']
             if 'defaultRequiredRendaSpeed' in d:
@@ -380,6 +390,8 @@ class Config:
         self.datatable_key = d['datatableKey']
         self.fumen_key = d['fumenKey']
         self.game_files_out_dir = d['gameFilesOutDir']
+        self.datatable_dir = d['datatableDir']
+        self.event_folder_dir = d['eventFolderDir']
         self.default_required_renda_speeds = d['defaultRequiredRendaSpeeds']
         self.auto_close_search = d['autoCloseSearch']
         self.recalculate_shinuti_score_with_required_renda_count = d['recalculateShinutiScoreWithRequiredRendaCount']
@@ -394,6 +406,14 @@ class Config:
 
     def update_game_files_out_dir(self, game_files_out_dir: str):
         self.game_files_out_dir = game_files_out_dir
+        self.write_back_to_json()
+
+    def update_datatable_dir(self, datatable_dir: str):
+        self.datatable_dir = datatable_dir
+        self.write_back_to_json()
+
+    def update_event_folder_dir(self, event_folder_dir: str):
+        self.event_folder_dir = event_folder_dir
         self.write_back_to_json()
 
     def update_default_required_renda_speed(self, default_required_renda_speeds: list[float]):
@@ -414,6 +434,8 @@ class Config:
             "datatableKey": self.datatable_key,
             "fumenKey": self.fumen_key,
             "gameFilesOutDir": self.game_files_out_dir,
+            "datatableDir": self.datatable_dir,
+            "eventFolderDir": self.event_folder_dir,
             "defaultRequiredRendaSpeeds": self.default_required_renda_speeds,
             "autoCloseSearch": self.auto_close_search,
             "recalculateShinutiScoreWithRequiredRendaCount": self.recalculate_shinuti_score_with_required_renda_count,
