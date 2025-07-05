@@ -206,6 +206,9 @@ class Program:
         self.window.bind("<Control-r>", self.recalculate_shinuchi_score)
         self.window.bind("<Control-Shift-KeyPress-R>", self.recalculate_all)
 
+        style = ttk.Style()
+        style.theme_use('winnative')
+
         self.songid_label = tk.Label(self.window, text="Song Id:")
         self.songid_label.grid(row=0, column=0)
 

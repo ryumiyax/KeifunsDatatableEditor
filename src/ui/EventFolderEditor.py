@@ -32,7 +32,6 @@ class EventFolderEditor:
     def setup_styles(self):
         """Configure ttk styles for modern appearance"""
         style = ttk.Style()
-        style.theme_use('clam')
 
         # Configure button style
         style.configure('Modern.TButton',
