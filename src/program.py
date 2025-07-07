@@ -19,6 +19,7 @@ import traceback
 import shutil
 import webbrowser
 from src.ui.EventFolderEditor import EventFolderEditor
+from src.ui.BatchUIDMover import BatchUIDMover
 
 
 class Program:
@@ -181,6 +182,7 @@ class Program:
         self.window_menu.add_command(label="Search", accelerator="Ctrl+F", command=self.search_view)
         self.window_menu.add_command(label="Music Order", accelerator="Ctrl+M", command=self.music_order_view)
         self.window_menu.add_command(label="Event Folder Editor", command=self.open_event_folder_editor)
+        self.window_menu.add_command(label="Batch Unique ID Mover", command=self.open_batch_uid_mover)
         self.menu_bar.add_cascade(label="Window", menu=self.window_menu)
 
         # Help Menu
@@ -1257,7 +1259,17 @@ class Program:
         cancel_button.pack(side='right', padx=(5, 0))
 
     def open_event_folder_editor(self, *args):
+        if not hasattr(self, 'datatable'):
+            messagebox.showerror('Event Folder Editor Error', f'Event Folder Editor: Open datatable first')
+            return
         EventFolderEditor(self)
+
+    def open_batch_uid_mover(self, *args):
+        if not hasattr(self, 'datatable'):
+            messagebox.showerror('Batch Unique ID Movement Error', f'Batch Unique ID Movement: Open datatable first')
+            return
+        BatchUIDMover(self)
+
     def on_new_song(self, *args):
         if not hasattr(self, 'datatable'):
             messagebox.showerror('New Song', f'Open datatable first')

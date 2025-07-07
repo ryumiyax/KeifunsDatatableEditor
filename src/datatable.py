@@ -616,6 +616,8 @@ class Datatable:
             musicOrder=music_order_indices
         )
 
+    def get_all_unique_ids(self) -> Set[int]:
+        return set(self.uid_musicinfo_index_mapping.keys())
     def set_song_info(self, song_info: Song) -> None:
         indices: DatatableIndices
         try:
@@ -849,7 +851,6 @@ class Datatable:
 
     def update_uid(self, old_uniqueId: int,
                    new_uniqueId: int) -> None:  # snake and camel case in one variable name is a first
-        """THIS FUNCTION ASSUMES NEW UNIQUE ID IS INDEED UNIQUE!!!!!"""
         if old_uniqueId not in self.uid_musicinfo_index_mapping:
             for i, e in enumerate(self.musicinfo):
                 if e.uniqueId == old_uniqueId:
