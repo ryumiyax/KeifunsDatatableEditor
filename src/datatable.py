@@ -732,6 +732,7 @@ class Datatable:
 
         ### Music Order
 
+        in_main_genre = False
         # Delete from music order
         for genre_list in self.music_order:
             genre_list[:] = [item for item in genre_list if item.id != song_info.id]
@@ -750,6 +751,13 @@ class Datatable:
                 else:
                     # Otherwise, insert at the specific position
                     genre_list.insert(new_position, song_item)
+                if genre_no == song_info.genreNo:
+                    in_main_genre = True
+
+        if in_main_genre:
+            self.songs_not_in_main_genre.discard(song_info.id)
+        else:
+            self.songs_not_in_main_genre.add(song_info.id)
 
     def delete_song(self, id: str):
         deleted_indices = self.get_indices(id)

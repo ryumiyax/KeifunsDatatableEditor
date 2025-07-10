@@ -30,7 +30,7 @@ GENRE_COLOURS = {
     5: '#ff7028',
     6: '#0acc2a',
     7: '#ded523',
-    8: '#b0b0b0'
+    8: '#515152'
 }
 
 LANGUAGES = ('JPN', 'ENG', 'zh-tw', 'KOR', 'zh-cn')

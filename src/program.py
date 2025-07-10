@@ -656,16 +656,66 @@ class Program:
             messagebox.showerror('Search View Error', f'Search View: Open datatable first')
             return
 
+        if self.current_songid:
+            try:
+                self.save_song()
+            except Exception as e:
+                messagebox.showerror('Save Song', f'Song Save Error: {e}')
+                return
+
         search_window = tk.Toplevel(self.window)
         search_window.title('Search')
         search_window.resizable(False, False)
         search_window.focus_set()
+
         langvar = tk.IntVar(value=self.language_value.get())
         song_list = self.datatable.get_song_list(main_genre_only=True)
+        original_data = [(genre, (x.title[langvar.get()], x.sub[langvar.get()], x.id, x.uniqueId))
+                         for genre, e in enumerate(song_list)
+                         for x in e]
 
         search_var = tk.StringVar()
+        current_sort_column = "Default"
+        current_sort_by_genre = True
 
         data: List
+
+        def sort_tree(column: str, by_genre: bool = False):
+            nonlocal data, tree, current_sort_column, current_sort_by_genre
+            current_sort_column = column
+            current_sort_by_genre = by_genre
+
+            if column == "Default":
+                sorted_data = data.copy()
+            else:
+                col_index = {"Title": 0, "Sub": 1, "SongId": 2, "UniqueId": 3}[column]
+
+                def sort_key(e):
+                    value = e[1][col_index]
+                    if column == "UniqueId":
+                        try:
+                            return int(value)
+                        except ValueError:
+                            return float("inf")
+                    return str(value).lower()
+
+                if by_genre:
+                    genre_groups = {}
+                    for row in data:
+                        _genre = row[0]
+                        genre_groups.setdefault(_genre, []).append(row)
+
+                    sorted_data = []
+                    for _genre in sorted(genre_groups.keys()):
+                        genre_rows = genre_groups[_genre]
+                        sorted_genre = sorted(genre_rows, key=sort_key)
+                        sorted_data.extend(sorted_genre)
+                else:
+                    sorted_data = sorted(data, key=sort_key)
+
+            tree.delete(*tree.get_children())
+            for e in sorted_data:
+                tree.insert("", tk.END, values=e[1], tags=(str(e[0])))
 
         def perform_search(*args):
             nonlocal data, tree, song_list
@@ -673,22 +723,44 @@ class Program:
             data = [(genre, (x.title[langvar.get()], x.sub[langvar.get()], x.id, x.uniqueId))
                     for genre, e in enumerate(song_list)
                     for x in e
-                    if query in x.title[langvar.get()].lower() or query in x.sub[
-                        langvar.get()].lower() or query in x.id.lower() or query in str(x.uniqueId)]  # god forgive me
-            tree.delete(*tree.get_children())
-            for e in data:
-                tree.insert("", tk.END, values=e[1], tags=(str(e[0])))
+                    if query in x.title[langvar.get()].lower()
+                    or query in x.sub[langvar.get()].lower()
+                    or query in x.id.lower()
+                    or query in str(x.uniqueId)]
+            sort_tree(current_sort_column, current_sort_by_genre)
 
+        def refresh_song_list(*_):
+            if self.current_songid:
+                try:
+                    self.save_song()
+                except Exception as e:
+                    messagebox.showerror('Save Song', f'Song Save Error: {e}')
+                    return
+            nonlocal song_list, original_data
+            song_list = self.datatable.get_song_list(main_genre_only=True)
+            original_data = [(genre, (x.title[langvar.get()], x.sub[langvar.get()], x.id, x.uniqueId))
+                             for genre, e in enumerate(song_list)
+                             for x in e]
+            perform_search()
+
+        # Bindings
+        search_window.bind_all("<Control-b>", lambda e: sort_tree("Title"))
+        search_window.bind_all("<Control-n>", lambda e: sort_tree("SongId"))
+        search_window.bind_all("<Control-m>", lambda e: sort_tree("UniqueId"))
+        search_window.bind_all("<Control-B>", lambda e: sort_tree("Title", by_genre=True))
+        search_window.bind_all("<Control-N>", lambda e: sort_tree("SongId", by_genre=True))
+        search_window.bind_all("<Control-M>", lambda e: sort_tree("UniqueId", by_genre=True))
+        search_window.bind_all("<Control-r>", refresh_song_list)
+        search_window.bind_all("<Control-comma>", lambda e: sort_tree("Default"))
+
+        # Search UI
         search_frame = tk.Frame(search_window)
-
         search_label = tk.Label(search_frame, text='Search:')
         search_label.grid(row=0, column=0, sticky="w")
-
-        search_var.trace_add("write", perform_search)  # Bind the search function to changes in the entry
+        search_var.trace_add("write", perform_search)
         search_bar = ttk.Entry(search_frame, textvariable=search_var, width=30)
         search_bar.grid(row=0, column=1, padx=10, pady=10)
         search_bar.focus()
-
         search_frame.grid(row=0, column=0)
 
         language_frame = tk.Frame(search_window, pady=5)
@@ -702,11 +774,9 @@ class Program:
 
         language_frame.grid(row=1, column=0)
 
-        # Create and place the results table
         tree_frame = ttk.Frame(search_window)
         tree_frame.grid(row=2, column=0, padx=(10, 0), pady=10, sticky='nsew')
 
-        # Create and place the results table
         tree = ttk.Treeview(tree_frame, columns=("Title", "Sub", "SongId", "UniqueId"), show="headings",
                             selectmode="browse", height=35)
 
@@ -723,15 +793,12 @@ class Program:
 
         tree.bind("<Double-1>", on_double_click)
 
-        # Create vertical scrollbar
         vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=tree.yview)
         vsb.pack(side='right', fill='y')
 
-        # Configure the Treeview to use scrollbars
         tree.configure(yscrollcommand=vsb.set)
         tree.pack(side='left', fill='both', expand=True)
 
-        # Define headings for the table
         tree.heading("Title", text="Title")
         tree.heading("Sub", text="Sub")
         tree.heading("SongId", text="SongId")
@@ -767,9 +834,22 @@ class Program:
         langvar = tk.IntVar(value=self.language_value.get())
         song_list = self.datatable.get_song_list(main_genre_only=False)
 
+
         # search_var = tk.StringVar()
 
         data: List
+
+        def force_refresh(*args):
+            nonlocal song_list
+            save_changes(destroy=False)
+            if self.current_songid:
+                try:
+                    self.save_song()
+                except Exception as e:
+                    messagebox.showerror('Save Song', f'Song Save Error: {e}')
+                    return
+            song_list = self.datatable.get_song_list(main_genre_only=False)
+            refresh_list()
 
         def refresh_list(*args):
             nonlocal data, tree, song_list
@@ -1234,17 +1314,19 @@ class Program:
         musicorder_window.grid_rowconfigure(1, weight=1)
         musicorder_window.grid_columnconfigure(0, weight=1)
 
+        # musicorder_window.bind_all("<Control-r>", force_refresh)
         refresh_list()
 
         # cancel and save button
 
-        def save_changes():
+        def save_changes(destroy=True):
             self.datatable.set_music_order(song_list)
             for song_id in changed_new_status:
                 self.datatable.toggle_song_new(song_id)
             if self.current_songid:
                 self.song_info.musicOrder = self.datatable.get_song_music_order(self.current_songid)
-            musicorder_window.destroy()
+            if destroy:
+                musicorder_window.destroy()
 
         def cancel_changes():
             musicorder_window.destroy()
