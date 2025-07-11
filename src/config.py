@@ -25,6 +25,7 @@ class Config:
             "gameFilesOutDir": "",
             "datatableDir": "",
             "eventFolderDir": "",
+            "importDatatableDir": "",
             "defaultRequiredRendaSpeeds": [6.37, 8.83, 16.6, 16.6, 16.6],
             "autoCloseSearch": True,
             "recalculateShinutiScoreWithRequiredRendaCount": False,
@@ -363,6 +364,10 @@ class Config:
             d['eventFolderDir'] = default_config['eventFolderDir']
             updated = True
 
+        if 'importDatatableDir' not in d:
+            d['importDatatableDir'] = default_config['importDatatableDir']
+            updated = True
+
         if 'defaultRequiredRendaSpeeds' not in d:
             d['defaultRequiredRendaSpeeds'] = default_config['defaultRequiredRendaSpeeds']
             if 'defaultRequiredRendaSpeed' in d:
@@ -392,6 +397,7 @@ class Config:
         self.game_files_out_dir = d['gameFilesOutDir']
         self.datatable_dir = d['datatableDir']
         self.event_folder_dir = d['eventFolderDir']
+        self.import_datatable_dir = d['importDatatableDir']
         self.default_required_renda_speeds = d['defaultRequiredRendaSpeeds']
         self.auto_close_search = d['autoCloseSearch']
         self.recalculate_shinuti_score_with_required_renda_count = d['recalculateShinutiScoreWithRequiredRendaCount']
@@ -416,6 +422,10 @@ class Config:
         self.event_folder_dir = event_folder_dir
         self.write_back_to_json()
 
+    def update_import_datatable_dir(self, import_datatable_dir: str):
+        self.import_datatable_dir = import_datatable_dir
+        self.write_back_to_json()
+
     def update_default_required_renda_speed(self, default_required_renda_speeds: list[float]):
         self.default_required_renda_speeds = default_required_renda_speeds
         self.write_back_to_json()
@@ -436,6 +446,7 @@ class Config:
             "gameFilesOutDir": self.game_files_out_dir,
             "datatableDir": self.datatable_dir,
             "eventFolderDir": self.event_folder_dir,
+            "importDatatableDir": self.import_datatable_dir,
             "defaultRequiredRendaSpeeds": self.default_required_renda_speeds,
             "autoCloseSearch": self.auto_close_search,
             "recalculateShinutiScoreWithRequiredRendaCount": self.recalculate_shinuti_score_with_required_renda_count,

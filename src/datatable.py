@@ -1,3 +1,4 @@
+from __future__ import annotations
 import re
 from dataclasses import dataclass, fields, field
 from typing import List, Dict, Set
@@ -7,6 +8,7 @@ from src import encryption, config
 from src import constants
 from dataclasses import dataclass, field, asdict
 from typing import List, Tuple
+
 
 """
 When adding a new attribute:
@@ -843,10 +845,7 @@ class Datatable:
             order[:] = [item for item in order if item.id != id]
 
     def is_song_id_taken(self, song_id: str) -> bool:
-        if song_id in self.indices: return True
-        for e in self.musicinfo:
-            if e.id == song_id: return True
-        return False
+        return song_id in self.musicinfo_indices
 
     def is_uid_taken(self, uniqueId: int) -> bool:
         if uniqueId in self.uid_musicinfo_index_mapping:
@@ -903,14 +902,15 @@ class Datatable:
             raise Exception(f"Unique id {unique_id} not found")
         return self.musicinfo[self.uid_musicinfo_index_mapping[unique_id]].id
 
-    # def import_song(self,
-    #                 musicinfo_item: MusicinfoItem,
-    #                 music_attribute_item: MusicAttributeItem,
-    #                 music_ai_section_item: MusicAISectionItem,
-    #                 music_usbsetting_item: MusicUsbsettingItem,
-    #                 wordlist_items: List[WordlistItem],
-    #                 music_orders: List[MusicOrderItem]
-    #                 ):
+    def import_songs(self, source_datatable: Datatable, song_ids_to_import: List[str], unique_id_remappings: Dict[int, int]):
+        for song_id in song_ids_to_import:
+            song = source_datatable.get_song_info(song_id)
+            if song.uniqueId in unique_id_remappings:
+                song.uniqueId = unique_id_remappings[song.uniqueId]
+            if song.uniqueId in self.uid_musicinfo_index_mapping:
+                raise Exception(f"Unique id {song.uniqueId} already exists")
+            self.set_song_info(song)
+
 
     def parse_musicinfo(self) -> None:
         with open(os.path.join(self.filepath, 'musicinfo.json'), 'r', encoding='utf-8') as f:

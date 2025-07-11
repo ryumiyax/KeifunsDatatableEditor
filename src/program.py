@@ -20,6 +20,7 @@ import shutil
 import webbrowser
 from src.ui.EventFolderEditor import EventFolderEditor
 from src.ui.BatchUIDMover import BatchUIDMover
+from src.ui.SongImporter import SongImporter
 
 
 class Program:
@@ -183,6 +184,7 @@ class Program:
         self.window_menu.add_command(label="Music Order", accelerator="Ctrl+M", command=self.music_order_view)
         self.window_menu.add_command(label="Event Folder Editor", command=self.open_event_folder_editor)
         self.window_menu.add_command(label="Batch Unique ID Mover", command=self.open_batch_uid_mover)
+        self.window_menu.add_command(label="Song Importer", command=self.open_song_importer)
         self.menu_bar.add_cascade(label="Window", menu=self.window_menu)
 
         # Help Menu
@@ -1351,6 +1353,12 @@ class Program:
             messagebox.showerror('Batch Unique ID Movement Error', f'Batch Unique ID Movement: Open datatable first')
             return
         BatchUIDMover(self)
+
+    def open_song_importer(self, *args):
+        if not hasattr(self, 'datatable'):
+            messagebox.showerror('Song Importer Error', f'Song Importer: Open datatable first')
+            return
+        SongImporter(self)
 
     def on_new_song(self, *args):
         if not hasattr(self, 'datatable'):
