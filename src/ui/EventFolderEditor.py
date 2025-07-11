@@ -8,6 +8,7 @@ import traceback
 from tkinter import filedialog, messagebox, simpledialog, ttk
 import json
 
+from src.constants import LANGUAGES
 from src import constants
 from src.config import config
 
@@ -388,7 +389,7 @@ class EventFolderEditor:
 
         tk.Label(lang_frame, text='Language:', bg='white', font=('Arial', 9)).pack(side='left')
 
-        languages = ['Japanese', 'English', 'Chinese (T)', 'Korean', 'Chinese (S)']
+        languages = LANGUAGES
         lang_combo = ttk.Combobox(lang_frame, values=languages, state='readonly', width=12)
         lang_combo.set(languages[0])
         lang_combo.pack(side='left', padx=(5, 0))
