@@ -139,7 +139,7 @@ class Program:
     initial: bool  # I'm genuinely convinced this variable is never used, scared and lazy to check
     duet_change_ignore_flag: bool  # I absolutely fucking hate this variable; Theres definitely a better solution that my retarded ass cannot think of
 
-    def __init__(self):
+    def __init__(self, datatable_path=""):
         self.window = tk.Tk()
         self.window.title("Keifun's Datatable Editor")
         self.window.resizable(False, False)
@@ -155,7 +155,7 @@ class Program:
 
         # File Menu
         self.file_menu = tk.Menu(self.menu_bar, tearoff=0)
-        self.file_menu.add_command(label="Open Datatable", accelerator="Ctrl+O", command=self.open_datatable)
+        self.file_menu.add_command(label="Open Datatable", accelerator="Ctrl+O", command=self.open_datatable_dialog)
         self.file_menu.add_command(label="Save Datatable", accelerator="Ctrl+S", command=self.save_datatable)
         self.file_menu.add_separator()
         self.file_menu.add_command(label="New Song", accelerator="Ctrl+N", command=self.on_new_song)
@@ -199,7 +199,7 @@ class Program:
 
         self.window.bind("<Control-n>", self.on_new_song)  # type: ignore
         self.window.bind("<Control-N>", self.on_new_song_tja)  # type: ignore
-        self.window.bind("<Control-o>", self.open_datatable)  # type: ignore
+        self.window.bind("<Control-o>", self.open_datatable_dialog)  # type: ignore
         self.window.bind("<Control-s>", self.save_datatable)  # type: ignore
         self.window.bind("<Control-,>", self.create_settings_window)  # type: ignore
         self.window.bind("<Control-u>", self.on_add_ura)  # type: ignore
@@ -545,6 +545,9 @@ class Program:
         updater = ud.Updater(self.window)
         updater.check_for_updates()
 
+        if datatable_path:
+            self.open_datatable(datatable_path)
+
     def open_musicorder_window(self):
         self.music_order_window = tk.Toplevel(self.window)
         self.music_order_window.attributes('-toolwindow', True)
@@ -784,6 +787,8 @@ class Program:
 
         def on_double_click(event):
             nonlocal search_window, tree
+            if not tree.selection():
+                return
             item = tree.selection()[0]
             new_songid = list(tree.item(item).values())[2][2]
             old_songid = self.current_songid
@@ -1810,7 +1815,7 @@ class Program:
             messagebox.showerror('Export Error', f'Export Error: {e}')
             return
 
-    def open_datatable(self, *args):
+    def open_datatable_dialog(self, *args):
         if hasattr(self, 'datatable') and self.current_songid:
             try:
                 self.save_song()
@@ -1820,15 +1825,18 @@ class Program:
         selected_directory = filedialog.askdirectory(initialdir=config.config.datatable_dir, title="Select an import directory")
         if not selected_directory:
             return
+        self.open_datatable(selected_directory)
+
+    def open_datatable(self, directory):
         try:
-            self.datatable = dt.Datatable(selected_directory)
+            self.datatable = dt.Datatable(directory)
             self.song_info = dt.Song()
             self.current_songid = ""
             self.populate_ui(True)
             self.songid_entry.delete(0, tk.END)
             self.disable_all_widgets(self.window)
             self.initial = True
-            config.config.update_datatable_dir(selected_directory)
+            config.config.update_datatable_dir(directory)
             messagebox.showinfo('Import Datable', 'Import success')
         except Exception as e:
             messagebox.showerror('Import Error', f'Import Error: {e}')

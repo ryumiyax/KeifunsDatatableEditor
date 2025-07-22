@@ -225,42 +225,59 @@ class BatchUIDMover:
             self.root.destroy()
 
     def _execute_uid_updates(self, mappings: List[Dict[str, int]]):
-        """Execute the UID updates using datatable.update_uid"""
+        """Execute the UID updates using datatable.update_uid with a two-phase renaming to avoid collisions."""
         success_count = 0
         error_count = 0
         errors = []
 
-        for mapping in mappings:
-            old_id = mapping['old']
-            new_id = mapping['new']
+        # 1) Compute an offset larger than any existing or target UID
+        all_ids = set(self.existing_uids)
+        for m in mappings:
+            all_ids.add(m['old'])
+            all_ids.add(m['new'])
+        offset = max(all_ids) + 1
 
+        # 2) Phase 1: rename old_id → (new_id + offset)
+        for m in mappings:
+            old_id = m['old']
+            temp_id = m['new'] + offset
             try:
                 if hasattr(self.parent, 'datatable') and hasattr(self.parent.datatable, 'update_uid'):
-                    self.parent.datatable.update_uid(old_id, new_id)
+                    self.parent.datatable.update_uid(old_id, temp_id)
                     success_count += 1
                 else:
                     raise AttributeError("datatable.update_uid method not found")
-
             except Exception as e:
                 error_count += 1
-                errors.append(f"UID {old_id} -> {new_id}: {str(e)}")
+                errors.append(f"Phase 1: {old_id} → {temp_id}: {e}")
 
-        # Show results
-        if success_count > 0:
+        # 3) Phase 2: rename (new_id + offset) → new_id
+        for m in mappings:
+            temp_id = m['new'] + offset
+            new_id = m['new']
+            try:
+                if hasattr(self.parent, 'datatable') and hasattr(self.parent.datatable, 'update_uid'):
+                    self.parent.datatable.update_uid(temp_id, new_id)
+                    success_count += 1
+                else:
+                    raise AttributeError("datatable.update_uid method not found")
+            except Exception as e:
+                error_count += 1
+                errors.append(f"Phase 2: {temp_id} → {new_id}: {e}")
+
+        # 4) Report results
+        if success_count:
             messagebox.showinfo(
                 "Update Complete",
-                f"Successfully updated {success_count} UIDs",
+                f"Successfully executed {success_count} UID operations",
                 parent=self.root
             )
 
-        if error_count > 0:
-            error_msg = f"Failed to update {error_count} UIDs:\n\n" + "\n".join(errors[:10])
+        if error_count:
+            msg = f"Failed {error_count} operations:\n\n" + "\n".join(errors[:10])
             if len(errors) > 10:
-                error_msg += f"\n... and {len(errors) - 10} more errors"
-
-            messagebox.showerror("Update Errors", error_msg, parent=self.root)
-
-
+                msg += f"\n...and {len(errors) - 10} more errors"
+            messagebox.showerror("Update Errors", msg, parent=self.root)
 
     # def _set_widgets_state(self, state: str):
     #     """Enable or disable all child widgets"""

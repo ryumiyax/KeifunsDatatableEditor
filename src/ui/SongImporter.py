@@ -28,6 +28,8 @@ class SongImporter:
         style = ttk.Style()
         style.configure('SongImporter.TFrame', background='white', relief='raised', borderwidth=1)
 
+        self.root.bind_all('<Control-Shift-KeyPress-O>', lambda e: self.open_uid_bulk_editor())
+
         self.setup_ui()
 
     def setup_ui(self):
@@ -479,3 +481,110 @@ class SongImporter:
         except Exception as e:
             messagebox.showerror("Import Error", f"Failed to import songs: {str(e)}",
                                  parent=self.root)
+
+    def open_uid_bulk_editor(self):
+        """Open a toplevel window for bulk UID remapping input (int-based)"""
+        editor = tk.Toplevel(self.root)
+        editor.title("Bulk Unique ID Editor")
+        editor.geometry("500x350")
+        editor.transient(self.root)
+        editor.grab_set()
+
+        # Grid layout with row/column weight
+        editor.columnconfigure(0, weight=1)
+        editor.rowconfigure(1, weight=1)
+
+        # Label
+        tk.Label(editor, text="Enter UID mappings (old_uid,new_uid):").grid(row=0, column=0, sticky="w", padx=10,
+                                                                            pady=(10, 0))
+
+        # Text box frame
+        text_frame = tk.Frame(editor)
+        text_frame.grid(row=1, column=0, sticky="nsew", padx=10, pady=5)
+        text_frame.columnconfigure(0, weight=1)
+        text_frame.rowconfigure(0, weight=1)
+
+        # Text widget with scrollbar
+        scrollbar = tk.Scrollbar(text_frame)
+        scrollbar.grid(row=0, column=1, sticky='ns')
+
+        text = tk.Text(text_frame, wrap="none", font=("Consolas", 10), yscrollcommand=scrollbar.set)
+        text.grid(row=0, column=0, sticky="nsew")
+        scrollbar.config(command=text.yview)
+
+        # Button frame
+        btn_frame = tk.Frame(editor)
+        btn_frame.grid(row=2, column=0, pady=(5, 10))
+
+        def apply_mappings():
+            content = text.get("1.0", "end").strip()
+            mappings = []
+            for line in content.splitlines():
+                if not line.strip():
+                    continue
+                parts = line.strip().split(",")
+                if len(parts) != 2:
+                    continue
+                try:
+                    old_uid = int(parts[0].strip())
+                    new_uid = int(parts[1].strip())
+                    mappings.append((old_uid, new_uid))
+                except ValueError:
+                    continue  # Skip lines with non-integer values
+
+            failed = []
+            added = 0
+            lang_idx = self.lang_combo.current()
+
+            for old_uid, new_uid in mappings:
+                # Check if already in queue
+                if any(song['original_unique_id'] == old_uid for song in self.import_queue):
+                    # Just update the UID if needed
+                    for song in self.import_queue:
+                        if song['original_unique_id'] == old_uid:
+                            song['new_unique_id'] = new_uid
+                            song['is_uid_taken'] = self.parent.datatable.is_uid_taken(new_uid)
+                            if old_uid != new_uid:
+                                self.unique_id_remappings[old_uid] = new_uid
+                    continue
+
+                try:
+                    songs = self.source_datatable.select_song_list([old_uid])
+                    if not songs:
+                        raise ValueError(f"UID {old_uid} not found.")
+                    song = songs[0]
+                except Exception as e:
+                    failed.append(f"{old_uid} → {new_uid} ({str(e)})")
+                    continue
+
+                song_data = {
+                    'title_all': song.title,
+                    'sub_all': song.sub,
+                    'title': song.title[lang_idx] if lang_idx < len(song.title) else song.title[0],
+                    'sub': song.sub[lang_idx] if lang_idx < len(song.sub) else song.sub[0],
+                    'song_id': song.id,
+                    'original_unique_id': old_uid,
+                    'new_unique_id': new_uid,
+                    'is_uid_taken': self.parent.datatable.is_uid_taken(new_uid),
+                    'is_song_id_taken': self.parent.datatable.is_song_id_taken(song.id),
+                }
+
+                self.import_queue.append(song_data)
+
+                if old_uid != new_uid:
+                    self.unique_id_remappings[old_uid] = new_uid
+
+                added += 1
+
+            self.update_import_queue_display()
+
+            message = f"✅ Added/Updated {added} songs."
+            if failed:
+                message += f"\n\n❌ Failed to process:\n" + "\n".join(failed)
+
+            messagebox.showinfo("UID Mapping Result", message, parent=editor)
+            editor.destroy()
+
+        # Buttons
+        ttk.Button(btn_frame, text="Apply", command=apply_mappings).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=editor.destroy).pack(side="left", padx=5)
