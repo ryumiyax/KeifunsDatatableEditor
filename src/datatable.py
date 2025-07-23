@@ -9,7 +9,6 @@ from src import constants
 from dataclasses import dataclass, field, asdict
 from typing import List, Tuple
 
-
 """
 When adding a new attribute:
     1. If new file: 
@@ -49,7 +48,9 @@ class Song:
     music_ai_section: List[int] = field(default_factory=lambda: [5, 5, 5, 5, 5])
     aiOniLevel11: str = ""
     aiUraLevel11: str = ""
-    musicOrder: List[tuple[int, int]] = field(default_factory=lambda: [(0, 0), (-1, 0), (-1, 0), (-1, 0), (-1, 0), (-1, 0), (-1, 0), (-1, 0)])
+    musicOrder: List[tuple[int, int]] = field(
+        default_factory=lambda: [(0, 0), (-1, 0), (-1, 0), (-1, 0), (-1, 0), (-1, 0), (-1, 0), (-1, 0)])
+
 
 @dataclass
 class DatatableIndices:
@@ -213,6 +214,9 @@ class SongListItem:
     mainGenre: int = 0
 
 
+MUSIC_ORDER_EXPORT_ORDER = [0, 1, 2, 3, 4, 6, 7, 5]
+
+
 class Datatable:
     """Datatable class"""
     filepath: str
@@ -363,16 +367,20 @@ class Datatable:
                     parts = field.name.split('_')
                     if parts[1] == "detail":
                         key = f"song_detail_{id}"
-                        self.wordlist_indices[id] = (self.wordlist_indices[id][0], self.wordlist_indices[id][1], new_index)
+                        self.wordlist_indices[id] = (
+                        self.wordlist_indices[id][0], self.wordlist_indices[id][1], new_index)
                     elif parts[1] == "sub":
                         key = f"song_sub_{id}"
-                        self.wordlist_indices[id] = (self.wordlist_indices[id][0], new_index, self.wordlist_indices[id][2])
+                        self.wordlist_indices[id] = (
+                        self.wordlist_indices[id][0], new_index, self.wordlist_indices[id][2])
                     else:
                         key = f"song_{id}"
-                        self.wordlist_indices[id] = (new_index, self.wordlist_indices[id][1], self.wordlist_indices[id][2])
+                        self.wordlist_indices[id] = (
+                        new_index, self.wordlist_indices[id][1], self.wordlist_indices[id][2])
                     self.wordlist.append(WordlistItem(key=key))
                 else:
-                    new_index = self.create_and_append_default_item(field.name, id, self.musicinfo[musicinfo_index].uniqueId)
+                    new_index = self.create_and_append_default_item(field.name, id,
+                                                                    self.musicinfo[musicinfo_index].uniqueId)
                 setattr(indices, field.name, new_index)
 
         return indices
@@ -620,12 +628,13 @@ class Datatable:
 
     def get_all_unique_ids(self) -> Set[int]:
         return set(self.uid_musicinfo_index_mapping.keys())
+
     def set_song_info(self, song_info: Song) -> None:
         indices: DatatableIndices
         try:
             indices = self.get_indices(song_info.id)
         except KeyError:
-            #New song
+            # New song
             self.musicinfo_indices[song_info.id] = len(self.musicinfo)
             self.musicinfo.append(MusicinfoItem(id=song_info.id, uniqueId=song_info.uniqueId))
             indices = self.get_indices(song_info.id)
@@ -828,7 +837,6 @@ class Datatable:
 
             self.wordlist_indices[other_songid] = tuple(updated_indices)
 
-
         # Update uid_musicinfo_index_mapping
         updated_mapping = {}
         for uid, index in self.uid_musicinfo_index_mapping.items():
@@ -902,7 +910,8 @@ class Datatable:
             raise Exception(f"Unique id {unique_id} not found")
         return self.musicinfo[self.uid_musicinfo_index_mapping[unique_id]].id
 
-    def import_songs(self, source_datatable: Datatable, song_ids_to_import: List[str], unique_id_remappings: Dict[int, int]):
+    def import_songs(self, source_datatable: Datatable, song_ids_to_import: List[str],
+                     unique_id_remappings: Dict[int, int]):
         for song_id in song_ids_to_import:
             song = source_datatable.get_song_info(song_id)
             if song.uniqueId in unique_id_remappings:
@@ -910,7 +919,6 @@ class Datatable:
             if song.uniqueId in self.uid_musicinfo_index_mapping:
                 raise Exception(f"Unique id {song.uniqueId} already exists")
             self.set_song_info(song)
-
 
     def parse_musicinfo(self) -> None:
         with open(os.path.join(self.filepath, 'musicinfo.json'), 'r', encoding='utf-8') as f:
@@ -972,7 +980,7 @@ class Datatable:
 
         defaults = MusicOrderItem().__dict__
 
-        self.music_order = [[] for _ in range(8)]
+        self.music_order = [[] for _ in range(len(constants.GENRE_MAPPING))]
         # Convert the list of dictionaries to a list of Item objects
         for item in data_dict['items']:
             try:
@@ -1074,17 +1082,19 @@ class Datatable:
 
                     # Now check each condition
                     if wordlist_item.key.startswith('song_detail_') and self.wordlist_indices[song_id][2] == -1:
-                        self.wordlist_indices[song_id] = (self.wordlist_indices[song_id][0], self.wordlist_indices[song_id][1], i)
+                        self.wordlist_indices[song_id] = (
+                        self.wordlist_indices[song_id][0], self.wordlist_indices[song_id][1], i)
                     elif wordlist_item.key.startswith('song_sub_') and self.wordlist_indices[song_id][1] == -1:
-                        self.wordlist_indices[song_id] = (self.wordlist_indices[song_id][0], i, self.wordlist_indices[song_id][2])
+                        self.wordlist_indices[song_id] = (
+                        self.wordlist_indices[song_id][0], i, self.wordlist_indices[song_id][2])
                     elif wordlist_item.key.startswith('song_') and self.wordlist_indices[song_id][0] == -1:
-                        self.wordlist_indices[song_id] = (i, self.wordlist_indices[song_id][1], self.wordlist_indices[song_id][2])
+                        self.wordlist_indices[song_id] = (
+                        i, self.wordlist_indices[song_id][1], self.wordlist_indices[song_id][2])
 
                 self.wordlist.append(wordlist_item)
                 i += 1
             except TypeError as e:
                 print(f"Failed to create WordlistItem from {item.get('id', 'unknown')}: {e}")
-
 
     def export_datatable(self, folder_path: str) -> None:
         items_list = []
@@ -1129,14 +1139,15 @@ class Datatable:
         with open(os.path.join(folder_path, 'music_usbsetting.json'), 'w', encoding='utf-8') as f:
             json.dump(data_dict, f, ensure_ascii=False, separators=(',', ':'))
 
-        # Flatten the list of lists for music_order
-        flattened_music_order = [item for sublist in self.music_order for item in sublist]
+        # Re‑order the sublists according to your export order, then flatten
+        ordered_sublists = [self.music_order[i] for i in MUSIC_ORDER_EXPORT_ORDER]
+        flattened_music_order = [item for sublist in ordered_sublists for item in sublist]
 
-        # Convert to list of dictionaries
+        # Convert to list of dicts
         items_list = [asdict(item) for item in flattened_music_order]
         data_dict = {"items": items_list}
 
-        # Write the flattened list to a JSON file
+        # Write to JSON
         with open(os.path.join(folder_path, 'music_order.json'), 'w', encoding='utf-8') as f:
             json.dump(data_dict, f, ensure_ascii=False, separators=(',', ':'))
 
