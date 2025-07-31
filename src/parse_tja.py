@@ -504,7 +504,7 @@ def get_statistics(course):
                 balloon_length = note['time'] - balloon_start
                 balloon_speed = balloon_count / balloon_length
                 balloons.append([balloon_length, balloon_count, balloon_speed > 40, (bpm_at_renda_start, current_bpm)])
-                balloon_start = False
+                balloon_start = -1
 
                 if balloon_speed <= 60:
                     sc_balloon[balloon_gogo] += balloon_count - 1
