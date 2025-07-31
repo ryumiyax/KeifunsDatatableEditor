@@ -468,35 +468,51 @@ def prepend_silent_to_audio(audio_file: str, length_ms: int) -> None:
 #     export_file = os.path.join(temp_dir, 'normalized.wav')
 #     adjusted_audio.export(export_file, format="wav", parameters=["-acodec", "pcm_s16le"])
 #     return export_file
-    
+
 def convert_to_wav(input_file: str, temp_dir: str) -> str:
     """
-    Converts the input audio file to WAV format.
+    Converts the input audio file to a size-optimized WAV format with loudness normalization.
 
     Args:
         input_file (str): Path to the input audio file.
         temp_dir (str): Path to the temporary directory.
 
     Returns:
-        str: Path to the converted WAV file.
+        str: Path to the compressed and normalized WAV file.
     """
-    # Load the audio file using pydub
-    audio = AudioSegment.from_file(input_file)
-    
-    audio = audio.set_channels(2)  # Stereo
-    audio = audio.set_frame_rate(44100)  # 44.1 kHz
-    audio = audio.set_sample_width(2)  # 16-bit
-
-    # Generate output file path
     base_name = os.path.splitext(os.path.basename(input_file))[0]
-    output_file = os.path.join(temp_dir, f"{base_name}.wav")
-    
-    # Export as WAV
-    audio.export(output_file, format="wav", parameters=["-acodec", "pcm_s16le"])
-    
-    return output_file
+    output_path = os.path.join(temp_dir, f"{base_name}.wav")
 
-    
+    subprocess.run([
+        "ffmpeg", "-y", "-i", input_file,
+        "-af", "loudnorm=I=-11:TP=-1.5:LRA=11",
+        "-ar", "48000",
+        "-ac", "2",
+        "-c:a", "pcm_s16le",
+        output_path
+    ], check=True)
+
+    return output_path
+#
+# def wav_to_hca_to_idsp_to_nus3bank(input_audio: str, out_file: str, preview_point: int, song_id: str):
+#     vgaudio_cli_path = common.resource_path(os.path.join("bin", "VGAudioCli.exe"))
+#     # with tempfile.TemporaryDirectory() as temp_dir:
+#     hca_audio_file = os.path.join(os.getcwd(), f"{song_id}.hca")
+#     subprocess.run([
+#         vgaudio_cli_path,
+#         "-i", input_audio,
+#         "-o", hca_audio_file,
+#         "--bitrate", "256000"
+#     ], check=True)
+#     idsp_audio_file = os.path.join(os.getcwd(), f"{song_id}.idsp")
+#     subprocess.run([
+#         vgaudio_cli_path,
+#         "-i", hca_audio_file,
+#         "-o", idsp_audio_file,
+#     ], check=True)
+#     template_name = select_template_name('nijiiro', f'song_{song_id}.nus3bank')
+#     modify_nus3bank_template('nijiiro', template_name, idsp_audio_file, preview_point, out_file)
+
 def wav_to_idsp_to_nus3bank(input_audio: str, out_file: str, preview_point: int, song_id: str):
     """Converts wav file to nus3bank file
 

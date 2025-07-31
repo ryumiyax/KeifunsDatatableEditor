@@ -914,6 +914,7 @@ class Datatable:
                      unique_id_remappings: Dict[int, int]):
         for song_id in song_ids_to_import:
             song = source_datatable.get_song_info(song_id)
+            song.musicOrder = [(-1, 0)] * len(constants.GENRE_MAPPING)
             if song.uniqueId in unique_id_remappings:
                 song.uniqueId = unique_id_remappings[song.uniqueId]
             if song.uniqueId in self.uid_musicinfo_index_mapping:

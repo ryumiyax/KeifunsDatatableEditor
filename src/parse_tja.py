@@ -428,6 +428,7 @@ def get_statistics(course):
     rendas, balloons = [], []
     start, end, combo = 0, 0, 0
     renda_start = -1
+    balloon_start = -1
     balloon_start, balloon_count, balloon_gogo = False, 0, 0
     sc_cur_event_idx = 0
     sc_cur_event = course['events'][sc_cur_event_idx]
@@ -497,12 +498,12 @@ def get_statistics(course):
 
         elif note['type'] == 'end':
             if renda_start != -1:
-                rendas.append([note['time'] - renda_start, bpm_at_renda_start])
+                rendas.append([note['time'] - renda_start, (bpm_at_renda_start, current_bpm)])
                 renda_start = -1
-            elif balloon_start:
+            elif balloon_start != -1:
                 balloon_length = note['time'] - balloon_start
                 balloon_speed = balloon_count / balloon_length
-                balloons.append([balloon_length, balloon_count, balloon_speed > 40, bpm_at_renda_start])
+                balloons.append([balloon_length, balloon_count, balloon_speed > 40, (bpm_at_renda_start, current_bpm)])
                 balloon_start = False
 
                 if balloon_speed <= 60:
@@ -522,6 +523,10 @@ def get_statistics(course):
             'balloonPop': sc_balloon_pop,
         }
     }
+
+def remove_comments(file_str):
+    # Remove everything from // to the end of the line
+    return re.sub(r'//.*', '', file_str)
 
 @dataclass
 class SongData:
@@ -555,6 +560,7 @@ def parse_and_get_data(tja_file: str, shinuti_override: List[int] = None, requir
 
     if file_str:
         # Proceed with the parsing if file_str has been assigned
+        file_str = remove_comments(file_str)
         parsed = parse_tja(file_str)
     else:
         raise Exception("Failed to parse TJA File")
@@ -572,7 +578,7 @@ def parse_and_get_data(tja_file: str, shinuti_override: List[int] = None, requir
         impoppable_balloon_s = 0.0 #BTD reference???
         impoppable_balloon_count = 0
         poppable_balloon_count = 0
-        for time, count, impoppable, bpm_start in stats['balloons']:
+        for time, count, impoppable, (bpm_start, bpm_end) in stats['balloons']:
             if impoppable:
                 # ret.renda_time[i] += calculate_difficulty_renda_time(time, i)
                 impoppable_balloon_s += time
@@ -580,9 +586,16 @@ def parse_and_get_data(tja_file: str, shinuti_override: List[int] = None, requir
             else:
                 poppable_balloon_count += count
 
-        for time, bpm_start in stats['rendas']:
+        for time, (bpm_start, bpm_end) in stats['rendas']:
             # use different coefficient for each difficulty
-            ret.renda_time[i] += calculate_difficulty_renda_time(time, i)
+            # ret.renda_time[i] += calculate_difficulty_renda_time(time, i)
+            ret.renda_time[i] += time
+            start_one_twenty_fourth_time = (60 / bpm_start) / 24
+            end_one_twenty_fourth_time = (60 / bpm_end) / 24
+            ret.renda_time[i] += start_one_twenty_fourth_time + end_one_twenty_fourth_time
+
+        ret.renda_time[i] = round(ret.renda_time[i], 6)
+
 
         ret.fuusen_total[i] = poppable_balloon_count
 
@@ -598,14 +611,6 @@ def parse_and_get_data(tja_file: str, shinuti_override: List[int] = None, requir
         ret.shinuti[i], ret.shinuti_score[i], _ = calculate_shinuti_and_shinuti_score(ret.renda_time[i], impoppable_balloon_s, poppable_balloon_count, ret.onpu_num[i], required_renda_speed, shinuti=shinuti)
 
     return ret
-
-def calculate_difficulty_renda_time(time, difficulty):
-    if difficulty <= 0:  # Easy
-        return time * 0.96296546
-    elif difficulty == 1:  # Normal
-        return time * 0.9536449
-    else:  # Hard, Oni, Ura
-        return time * 0.94737088
 
 def calculate_shinuti_and_shinuti_score(roll_duration_s: float, impoppable_balloon_s: float, poppable_balloon_count: int, onpu_num: int, required_renda_speed: float, shinuti: int = 0):
     """
@@ -631,3 +636,5 @@ def calculate_tenjyou_and_shinuti_score_from_renda_count(shinuti: int, poppable_
     shinuti_score = tenjyou + roll_score
     return tenjyou, shinuti_score
 
+if __name__ == '__main__':
+    print(parse_and_get_data("C:\\Users\\Keitan\\Downloads\\!新曲\\!新曲\\id1387 - バブリー革命 ～ばんばんバブル～\\バブリー革命 ～ばんばんバブル～.tja"))
