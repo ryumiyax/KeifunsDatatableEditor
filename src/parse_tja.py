@@ -635,6 +635,3 @@ def calculate_tenjyou_and_shinuti_score_from_renda_count(shinuti: int, poppable_
     tenjyou = shinuti * onpu_num + balloon_score
     shinuti_score = tenjyou + roll_score
     return tenjyou, shinuti_score
-
-if __name__ == '__main__':
-    print(parse_and_get_data("C:\\Users\\Keitan\\Downloads\\!新曲\\!新曲\\id1387 - バブリー革命 ～ばんばんバブル～\\バブリー革命 ～ばんばんバブル～.tja"))

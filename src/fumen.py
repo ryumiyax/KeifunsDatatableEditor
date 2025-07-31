@@ -21,11 +21,8 @@ def convert_and_write(tja_data: TJACourse,
     fix_dk_note_types_course(fumen_data)
     # Add course ID (e.g., '_x', '_x_1', '_x_2') to the output file's base name
     output_name = base_name
-    if single_course:
-        pass  # Replicate tja2bin.exe behavior by excluding course ID
-    else:
-        split_name = course_name.split("P")  # e.g., 'OniP2' -> ['Oni', '2']
-        output_name += f"_{COURSE_IDS[split_name[0]]}"
+    split_name = course_name.split("P")  # e.g., 'OniP2' -> ['Oni', '2']
+    output_name += f"_{COURSE_IDS[split_name[0]]}"
 
     # Write to the temp_dir instead of hardcoded 'temp' directory
     out_files = [f"{output_name}.bin", f"{output_name}_1.bin", f"{output_name}_2.bin"]
@@ -103,7 +100,6 @@ def convert_tja_to_fumen_files(song_id: str, tja_file: str, audio_file: str, pre
         parsed_tja.offset = offset_s
 
         # Convert parsed TJA courses and write each course to `.bin` files inside temp_dir
-        print(parsed_tja.courses.keys())
         for course_name in parsed_tja.courses.keys():
             parsed_tja.courses[course_name].offset = offset_s
             convert_and_write(parsed_tja.courses[course_name], course_name, song_id,
