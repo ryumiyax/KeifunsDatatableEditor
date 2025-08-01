@@ -16,7 +16,17 @@ from src.config import config
 
 HEADER_GLOBAL = [
     'TITLE',
+    'TITLEJA',
+    'TITLEEN',
+    'TITLETW',
+    'TITLEKO',
+    'TITLECN',
     'SUBTITLE',
+    'SUBTITLEJA',
+    'SUBTITLEEN',
+    'SUBTITLETW',
+    'SUBTITLEKO',
+    'SUBTITLECN',
     'BPM',
     'WAVE',
     'OFFSET',
@@ -279,7 +289,17 @@ def parse_tja(tja):
 
     headers = {
         'title': '',
+        'titleja': '',
+        'titleen': '',
+        'titletw': '',
+        'titleko': '',
+        'titlecn': '',
         'subtitle': '',
+        'subtitleja': '',
+        'subtitleen': '',
+        'subtitletw': '',
+        'subtitleko': '',
+        'subtitlecn': '',
         'bpm': 120,
         'wave': '',
         'offset': 0,
@@ -531,8 +551,8 @@ def remove_comments(file_str):
 @dataclass
 class SongData:
     demo_start: float = 0.0
-    title: str = ""
-    sub: str = ""
+    titles: str = field(default_factory=lambda: [0, 0, 0, 0, 0])
+    subtitles: str = field(default_factory=lambda: [0, 0, 0, 0, 0])
     star: List[int] = field(default_factory=lambda: [0, 0, 0, 0, 0])
     length: List[float] = field(default_factory=lambda: [0.0, 0.0, 0.0, 0.0, 0.0])
     shinuti: List[int] = field(default_factory=lambda: [0, 0, 0, 0, 0])
@@ -566,9 +586,30 @@ def parse_and_get_data(tja_file: str, shinuti_override: List[int] = None, requir
         raise Exception("Failed to parse TJA File")
 
     ret.demo_start = float(parsed['headers']['demostart'])
-    ret.title = parsed['headers']['title']
-    sub = parsed['headers']['subtitle']
-    ret.sub = sub[2::] if sub.startswith('--') else sub
+    ret.titles = [
+        parsed['headers']['titleja'] if parsed['headers']['titleja'] else parsed['headers']['title'],
+        parsed['headers']['titleen'] if parsed['headers']['titleen'] else parsed['headers']['title'],
+        parsed['headers']['titletw'] if parsed['headers']['titletw'] else parsed['headers']['title'],
+        parsed['headers']['titleko'] if parsed['headers']['titleko'] else parsed['headers']['title'],
+        parsed['headers']['titlecn'] if parsed['headers']['titlecn'] else parsed['headers']['title'],
+    ]
+
+    def clean_sub(sub):
+        return sub[2::] if sub.startswith('--') else sub
+
+    ret.subtitles = [
+        clean_sub(
+            parsed['headers']['subtitleja'] if parsed['headers']['subtitleja'] else parsed['headers']['subtitle']),
+        clean_sub(
+            parsed['headers']['subtitleen'] if parsed['headers']['subtitleen'] else parsed['headers']['subtitle']),
+        clean_sub(
+            parsed['headers']['subtitletw'] if parsed['headers']['subtitletw'] else parsed['headers']['subtitle']),
+        clean_sub(
+            parsed['headers']['subtitleko'] if parsed['headers']['subtitleko'] else parsed['headers']['subtitle']),
+        clean_sub(
+            parsed['headers']['subtitlecn'] if parsed['headers']['subtitlecn'] else parsed['headers']['subtitle']),
+    ]
+
     for i in parsed['courses'].keys():
         ret.star[i] = parsed['courses'][i]['headers']['level']
         stats = get_statistics(convert_to_timed(parsed['courses'][i]))
@@ -590,11 +631,10 @@ def parse_and_get_data(tja_file: str, shinuti_override: List[int] = None, requir
             # use different coefficient for each difficulty
             # ret.renda_time[i] += calculate_difficulty_renda_time(time, i)
             ret.renda_time[i] += time
-            start_one_twenty_fourth_time = (60 / bpm_start) / 24
-            end_one_twenty_fourth_time = (60 / bpm_end) / 24
-            ret.renda_time[i] += start_one_twenty_fourth_time + end_one_twenty_fourth_time
+            end_one_twenty_fourth_time = (60 / bpm_end) / 12
+            ret.renda_time[i] += end_one_twenty_fourth_time
 
-        ret.renda_time[i] = round(ret.renda_time[i], 6)
+        # ret.renda_time[i] = round(ret.renda_time[i], 6)
 
 
         ret.fuusen_total[i] = poppable_balloon_count
@@ -635,3 +675,7 @@ def calculate_tenjyou_and_shinuti_score_from_renda_count(shinuti: int, poppable_
     tenjyou = shinuti * onpu_num + balloon_score
     shinuti_score = tenjyou + roll_score
     return tenjyou, shinuti_score
+
+
+if __name__ == '__main__':
+    print(parse_and_get_data("C:\\Users\\Keitan\\Downloads\\夜咲太鼓輝や打ち.tja"))

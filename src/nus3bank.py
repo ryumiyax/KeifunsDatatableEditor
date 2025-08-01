@@ -1,4 +1,5 @@
 import argparse
+import re
 import subprocess
 import os
 import sys
@@ -469,23 +470,50 @@ def prepend_silent_to_audio(audio_file: str, length_ms: int) -> None:
 #     adjusted_audio.export(export_file, format="wav", parameters=["-acodec", "pcm_s16le"])
 #     return export_file
 
-def convert_to_wav(input_file: str, temp_dir: str) -> str:
+def get_max_volume(input_file: str) -> float:
     """
-    Converts the input audio file to a size-optimized WAV format with loudness normalization.
+    Analyze the audio to get its max volume in dB.
+    Returns max_volume in dBFS (e.g., -7.3), or None if detection fails.
+    """
+    result = subprocess.run(
+        ["ffmpeg", "-i", input_file, "-af", "volumedetect", "-f", "null", "-"],
+        stderr=subprocess.PIPE, stdout=subprocess.PIPE, text=True
+    )
+    match = re.search(r"max_volume: (-?\d+\.?\d*) dB", result.stderr)
+    print(float(match.group(1)))
+    return float(match.group(1)) if match else None
+
+
+def convert_to_wav(input_file: str, temp_dir: str, target_peak_db: float = -1.5) -> str:
+    """
+    Converts the input audio file to WAV format and applies gain only if overall volume is low.
 
     Args:
         input_file (str): Path to the input audio file.
         temp_dir (str): Path to the temporary directory.
+        target_peak_db (float): Target peak volume (default is -1.5 dBFS).
 
     Returns:
-        str: Path to the compressed and normalized WAV file.
+        str: Path to the gain-adjusted WAV file.
     """
     base_name = os.path.splitext(os.path.basename(input_file))[0]
     output_path = os.path.join(temp_dir, f"{base_name}.wav")
 
+    # Step 1: Get current max volume
+    # max_vol = get_max_volume(input_file)
+    # if max_vol is None:
+    #     raise RuntimeError("Failed to detect max volume.")
+    #
+    # # Step 2: Calculate needed gain
+    # gain_db = target_peak_db - max_vol
+    # print(f"Current max volume: {max_vol:.2f} dBFS, applying gain: {gain_db:.2f} dB")
+    #
+    # # Step 3: Apply gain (if necessary) and convert to WAV
+    # af_filter = f"volume={gain_db}dB" if gain_db > 0 else "anull"
+
     subprocess.run([
         "ffmpeg", "-y", "-i", input_file,
-        "-af", "loudnorm=I=-11:TP=-1.5:LRA=11",
+        # "-af", af_filter,
         "-ar", "48000",
         "-ac", "2",
         "-c:a", "pcm_s16le",

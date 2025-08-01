@@ -1642,8 +1642,8 @@ class Program:
                                  )
 
         for i in range(len(constants.LANGUAGES)):
-            self.song_info.songNameList[i] = (data.title, i)
-            self.song_info.songSubList[i] = (data.sub, i)
+            self.song_info.songNameList[i] = (data.titles[i], i)
+            self.song_info.songSubList[i] = (data.subtitles[i], i)
         self.songid_entry.delete(0, tk.END)
         self.songid_entry.insert(0, new_id)
         self.current_songid = new_id
