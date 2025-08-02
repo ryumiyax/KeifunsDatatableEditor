@@ -679,9 +679,6 @@ class Program:
 
         langvar = tk.IntVar(value=self.language_value.get())
         song_list = self.datatable.get_song_list(main_genre_only=True)
-        original_data = [(genre, (x.title[langvar.get()], x.sub[langvar.get()], x.id, x.uniqueId))
-                         for genre, e in enumerate(song_list)
-                         for x in e]
 
         search_var = tk.StringVar()
         current_sort_column = "Default"
@@ -729,7 +726,7 @@ class Program:
         def perform_search(*args):
             nonlocal data, tree, song_list
             query = search_var.get().lower()
-            data = [(genre, (x.title[langvar.get()], x.sub[langvar.get()], x.id, x.uniqueId))
+            data = [(genre, ("♦ " + x.title[langvar.get()] if x.new else x.title[langvar.get()], x.sub[langvar.get()], x.id, x.uniqueId))
                     for genre, e in enumerate(song_list)
                     for x in e
                     if query in x.title[langvar.get()].lower()
@@ -745,11 +742,8 @@ class Program:
                 except Exception as e:
                     messagebox.showerror('Save Song', f'Song Save Error: {e}')
                     return
-            nonlocal song_list, original_data
+            nonlocal song_list
             song_list = self.datatable.get_song_list(main_genre_only=True)
-            original_data = [(genre, (x.title[langvar.get()], x.sub[langvar.get()], x.id, x.uniqueId))
-                             for genre, e in enumerate(song_list)
-                             for x in e]
             perform_search()
 
         # Bindings
