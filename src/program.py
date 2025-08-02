@@ -6,6 +6,7 @@ import tkinter as tk
 import os
 import sys
 
+from _tkinter import TclError
 from select import select
 
 from src import datatable as dt
@@ -78,7 +79,7 @@ class Program:
     # ai_sections_comboboxes: List[ttk.Combobox]
 
     # Spinbox
-    unique_id_spinbox: tk.Spinbox
+    unique_id_entry: tk.Entry
     star_spinboxes: List[tk.Spinbox]
     star_values: List[tk.IntVar]
     shinuchi_spinboxes: List[tk.Spinbox]
@@ -313,9 +314,12 @@ class Program:
         self.unique_id_label = tk.Label(self.song_details_subframes[1], text="Unique Id:", anchor="w", width=20)
         self.unique_id_label.grid(row=0, column=0, sticky="w")
 
-        self.unique_id_spinbox = tk.Spinbox(self.song_details_subframes[1], from_=0, to=9999,
-                                            textvariable=self.unique_id_var)
-        self.unique_id_spinbox.grid(row=1, column=0, sticky="ew")
+        self.unique_id_entry = tk.Entry(self.song_details_subframes[1],
+                                        textvariable=self.unique_id_var)
+        self.unique_id_entry.grid(row=1, column=0, sticky="ew")
+
+        self.unique_id_entry.bind("<FocusOut>", self.check_and_colour_unique_id_field)
+        self.unique_id_entry.bind("<Return>", self.check_and_colour_unique_id_field)
 
         # Main Genre
         self.genre_label = tk.Label(self.song_details_subframes[1], text="Main Genre:", anchor="w", width=20)
@@ -2151,6 +2155,7 @@ class Program:
                 self.song_info.shinuti_score[i] != self.song_info.shinuti_score_duet[i] for i in range(5)))
         self.poplate_wordlist_vars()
         self.unique_id_var.set(self.song_info.uniqueId)
+        self.check_and_colour_unique_id_field()
         self.genre_var.set(constants.GENRE_NAME_MAP[
                                self.song_info.genreNo])  # Do not question this line of code (getting key given value)
         self.song_filename_var.set(self.song_info.songFileName)
@@ -2180,6 +2185,18 @@ class Program:
         self.song_sub_font_var.set(self.song_info.songSubList[self.language_value.get()][1])
         self.song_detail_var.set(self.song_info.songDetailList[self.language_value.get()][0])
         self.song_detail_font_var.set(self.song_info.songDetailList[self.language_value.get()][1])
+
+    def check_and_colour_unique_id_field(self, *args):
+        try:
+            unique_id = int(self.unique_id_var.get())
+            if self.datatable.is_uid_taken(unique_id) and self.datatable.get_songid_from_unique_id(unique_id) != self.current_songid:
+                self.unique_id_entry.configure(bg='orange')
+            else:
+                self.unique_id_entry.configure(bg='green2')
+        except TclError:
+            self.unique_id_entry.configure(bg='orange')
+
+
 
     def recalculate_shinuchi_score(self, *args):
         if not self.current_songid: return
